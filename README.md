@@ -1,6 +1,6 @@
 # Wordle Word Finder 🔤🟩🟨
 
-_Inspired by my daily struggle to find wordle words_ ¯\_(ツ)_/¯
+_Inspired by my daily struggle to find wordle words_ ¯\\_(ツ)_/¯
 
 A minimal web-based tool to help you find all valid 5-letter English words that can be formed using a given set of characters for the popular NYT game [Wordle](https://www.nytimes.com/games/wordle/index.html).
 
