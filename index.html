@@ -85,7 +85,8 @@
       const inputSet = new Set(input);
       const results = validWords.filter(word => {
         const wordSet = new Set(word);
-        return [...wordSet].every(ch => inputSet.has(ch));
+        // Check if every character in inputSet is present in wordSet
+        return [...inputSet].every(ch => wordSet.has(ch));
       });
 
       const resultsContainer = document.getElementById('results');
