@@ -13,7 +13,7 @@
       font-family: 'Inter', sans-serif;
       background-color: #121213;
       color: #ffffff;
-      padding: 2rem;
+      padding: 1rem;
       max-width: 600px;
       margin: auto;
       text-align: center;
@@ -21,56 +21,78 @@
 
     h1 {
       font-weight: 600;
-      font-size: 2rem;
+      font-size: 2.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    p {
       margin-bottom: 1rem;
+      font-size: 1.1rem;
+      color: #d7dadc;
+    }
+
+    .input-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+      color: #d7dadc;
     }
 
     input {
-      padding: 0.5rem 1rem;
+      padding: 0.75rem 1rem;
       font-size: 1rem;
-      border: 1px solid #3a3a3c;
+      border: 2px solid #3a3a3c;
       background-color: #121213;
       color: white;
-      border-radius: 4px;
-      margin-right: 0.5rem;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 300px;
+      box-sizing: border-box;
+      transition: border-color 0.3s;
     }
 
     .tile-inputs {
       display: flex;
       justify-content: center;
-      gap: 8px;
-      margin-bottom: 1rem;
+      gap: 10px;
+      margin-bottom: 2rem;
     }
     
     .tile {
-      width: 3rem;
-      height: 3rem;
+      width: 4rem;
+      height: 4rem;
       text-align: center;
-      font-size: 1.8rem;
+      font-size: 2rem;
       font-weight: bold;
       text-transform: uppercase;
       background-color: #538d4e; /* green tile */
       color: white;
-      border: none;
-      border-radius: 4px;
+      border: 2px solid #818384;
+      border-radius: 8px;
       outline: none;
+      transition: border-color 0.3s;
     }
     
     .tile:focus {
-      outline: 2px solid #ffffff88;
+      border-color: #3a3a3c;
     }
 
     button {
-      display: block;
-      margin: 0.5rem auto 1.5rem auto;
-      padding: 0.5rem 1.5rem;
+      display: inline-block;
+      margin: 1rem auto 2rem auto;
+      padding: 0.75rem 2rem;
       background-color: #818384;
       border: none;
       color: white;
-      font-size: 1rem;
-      border-radius: 4px;
+      font-size: 1.1rem;
+      border-radius: 8px;
       cursor: pointer;
       font-weight: 600;
+      transition: background-color 0.3s, transform 0.2s;
     }
 
     button:hover {
@@ -78,21 +100,48 @@
     }
 
     #results {
-      margin-top: 2rem;
-      text-align: left;
+      margin-top: 1rem;
+      padding: 1rem;
+      background-color: #272729;
+      border-radius: 8px;
+      min-height: 50px;
+      text-align: center;
       white-space: pre-wrap;
-      font-family: 'Inter', monospace;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
     }
 
     .word {
       display: inline-block;
-      margin: 0.2rem 0.6rem;
+      padding: 0.5rem 1rem;
+      background-color: #3a3a3c;
+      border-radius: 4px;
+      font-family: 'Inter', monospace;
+      font-size: 1rem;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 1rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      .tile {
+        width: 3rem;
+        height: 3rem;
+        font-size: 1.5rem;
+      }
     }
   </style>
 </head>
 <body>
   <h1>Wordle Word Finder</h1>
-  <p>Enter known letter positions (green tiles):</p>
+  <p>Green letters (known letter positions):</p>
   <div id="tileRow" class="tile-inputs">
     <input type="text" maxlength="1" id="pos0" class="tile" />
     <input type="text" maxlength="1" id="pos1" class="tile" />
@@ -101,8 +150,16 @@
     <input type="text" maxlength="1" id="pos4" class="tile" />
   </div>
   
-  <p>Enter known yellow letters (must be included):</p>
-  <input type="text" id="yellowInput" placeholder="e.g. aei" maxlength="5" />
+  <div class="input-group">
+    <label for="yellowInput">Yellow letters (must be included, any position):</label><br>
+    <!-- <p>Enter known yellow letters (must be included):</p> -->
+    <input type="text" id="yellowInput" placeholder="e.g. aei" maxlength="5" />
+  </div>
+
+  <div class="input-group">
+    <label for="grayInput">Gray letters (not in the word):</label><br>
+    <input type="text" id="grayInput" placeholder="e.g. rstln">
+  </div>
 
   <button onclick="searchWords()">Search</button>
 
@@ -118,7 +175,10 @@
 
     function searchWords() {
       const yellowInput = document.getElementById('yellowInput').value.toLowerCase().replace(/[^a-z]/g, '');
+      const grayLetters = document.getElementById('grayInput').value.toLowerCase();
+
       const yellowSet = new Set(yellowInput);
+      const graySet = new Set(grayLetters);
     
       // Read green-tile characters by position
       const greenPositions = [];
@@ -138,6 +198,13 @@
         // Check that all yellow characters are in the word (any position)
         for (let ch of yellowSet) {
           if (!word.includes(ch)) {
+            return false;
+          }
+        }
+
+        // Check that all grey characters are not in the word
+        for (let ch of graySet) {
+          if (word.includes(ch)) {
             return false;
           }
         }
