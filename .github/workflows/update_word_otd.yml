@@ -36,6 +36,6 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add words_otd.json
+          git add word_otd.json
           git diff --staged --quiet || git commit -m "Set Word of the Day: ${{ github.event.inputs.word }}"
           git push
