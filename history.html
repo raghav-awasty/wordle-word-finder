@@ -21,6 +21,10 @@
             margin-bottom: 2rem;
         }
 
+        h2 {
+            padding-top: 0.5rem;
+        }
+
         .history-entry {
             background-color: #272729;
             border-radius: 8px;
@@ -67,7 +71,7 @@
         async function loadHistory() {
             const historyContainer = document.getElementById('history-container');
             try {
-                const response = await fetch('words_otd.json');
+                const response = await fetch('word_otd.json');
                 // Handle cases where the file might not exist yet
                 if (!response.ok) {
                     historyContainer.innerHTML = `<p style="text-align: center;">History will be available soon. The first word is scheduled to be picked shortly!</p>`;
@@ -86,8 +90,8 @@
 
                 historyContainer.innerHTML = history.map(entry => `
                     <div class="history-entry">
-                        <p class="date"><span class="math-inline">\{entry\.date\}</p\>
-<h2\></span>{entry.word}</h2>
+                        <p class="date"><span class="math-inline">${entry.date}</p>
+                        <h2>${entry.word}</h2>
                         <p>${entry.definition}</p>
                     </div>
                 `).join('');
