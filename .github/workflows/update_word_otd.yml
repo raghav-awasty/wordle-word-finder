@@ -10,14 +10,14 @@ on:
 
 permissions:
   contents: write
-  
+
 jobs:
   update_word:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -37,8 +37,8 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git config --global user.name 'Raghav Awasty'
+          git config --global user.email 'raghav.awasty@gmail.com'
           git add word_otd.json
           git diff --staged --quiet || git commit -m "Set Word of the Day: ${{ github.event.inputs.word }}"
           git push
