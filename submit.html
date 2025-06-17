@@ -5,69 +5,96 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Word of the Day Submitter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet"> 
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             line-height: 1.6;
             max-width: 600px;
             margin: 40px auto;
-            padding: 20px;
-            background-color: #f6f8fa;
-            border: 1px solid #d0d7de;
-            border-radius: 6px;
+            padding: 2rem;
+            background-color: #121213;
+            color: #ffffff;
+            border: 1px solid #464849;
+            border-radius: 8px;
         }
 
         h1 {
             text-align: center;
+            margin-bottom: 2rem;
         }
 
         label {
             display: block;
-            margin-top: 15px;
+            margin-top: 1.25rem;
             font-weight: 600;
         }
 
         input {
             width: 100%;
-            padding: 8px;
-            margin-top: 5px;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
             box-sizing: border-box;
-            border-radius: 6px;
-            border: 1px solid #d0d7de;
+            border-radius: 8px;
+            border: 1px solid #3a3a3c;
+            background-color: #202124;
+            color: #ffffff;
+            font-size: 1rem;
         }
 
         button {
             width: 100%;
-            padding: 10px;
-            margin-top: 20px;
-            background-color: #2da44e;
+            padding: 0.75rem;
+            margin-top: 1.25rem;
+            background-color: #538d4e;
             color: white;
             border: none;
-            border-radius: 6px;
-            font-size: 16px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
             cursor: pointer;
         }
 
         button:hover {
-            background-color: #2c974b;
+            background-color: #6aaa64;
         }
 
         #status {
-            margin-top: 20px;
+            margin-top: 1.5rem;
             text-align: center;
-            font-weight: bold;
+            font-weight: 600;
         }
 
         .warning {
             color: #cf222e;
             font-size: 0.9em;
         }
+
+        a {
+            color: #538d4e;
+        }
+
+        a:hover {
+            color: #85c185;
+        }
+
+        .nav-link {
+            display: block;
+            text-align: center;
+            margin-top: 2rem;
+            color: #538d4e;
+            text-decoration: none;
+        }
+
+        .nav-link:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 
 <body>
 
-    <h1>Word of the Day Submitter</h1>
+    <h1>Submit Word of the Day</h1>
 
     <label for="word">Today's 5-Letter Word:</label>
     <input type="text" id="word" name="word" maxlength="5" pattern="[a-zA-Z]{5}" required>
@@ -77,12 +104,14 @@
     <p class="warning">
         Your PAT is used to authorize the request and is NOT stored.
         Create a <a href="https://github.com/settings/tokens/new?scopes=repo&description=Wordle%20Workflow%20Trigger"
-            target="_blank" rel="noopener">new token with 'repo' scope</a>.
+            target="_blank" rel="noopener">new token with 'repo' scope.</a>
     </p>
 
     <button onclick="triggerWorkflow()">Submit Word</button>
 
     <div id="status"></div>
+
+    <a href="index.html" class="nav-link">Back to Wordle Finder</a>
 
     <script>
         const GITHUB_USERNAME = "raghav-awasty";
@@ -125,7 +154,7 @@
 
             if (response.ok) {
                 statusDiv.textContent = `Success! Workflow triggered with word: ${word}`;
-                statusDiv.style.color = '#2da44e';
+                statusDiv.style.color = '#6aaa64';
             } else {
                 const error = await response.json();
                 statusDiv.textContent = `Error: ${error.message}`;
