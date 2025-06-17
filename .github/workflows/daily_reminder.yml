@@ -1,0 +1,38 @@
+name: Send Daily Word Reminder
+
+on:
+  schedule:
+    # Runs at 8:00 AM UTC every day use https://crontab.guru/ to generate cron schedules.
+    - cron: '0 8 * * *'
+  workflow_dispatch: # for manual testing
+
+jobs:
+  send_reminder_email:
+    runs-on: ubuntu-latest
+    name: Email Reminder Job
+    steps:
+      - name: Send reminder email
+        uses: dawidd6/action-send-mail@v6
+        with:
+          # Required mail server credentials
+          server_address: smtp.gmail.com # Use your email provider's SMTP server
+          server_port: 465
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+
+          subject: "What is today's Word of the Day?"
+
+          body: |
+            Hello!
+            
+            It's time to update the Word of the Day.
+            
+            1. If you haven't played today, here is the link: https://www.nytimes.com/games/wordle/index.html
+            
+            2. Once you have the word, enter it here:
+            https://raghav-awasty.github.io/wordle-word-finder/submit.html
+            
+            Thanks!
+
+          to: ${{ secrets.MAIL_USERNAME }}
+          from: GitHub Actions Reminder <${{ secrets.MAIL_USERNAME }}>
