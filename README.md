@@ -6,23 +6,48 @@ A minimal web-based tool to help you find all valid 5-letter English words that 
 
 ## 🔍 Features
 
-- Clean, Wordle-inspired UI
-- Type in a set of letters (e.g. `fied`)
-- Instantly shows all valid 5-letter words that contain those letters
+- **Wordle-inspired UI** with tile-based inputs and matching color logic
+- Instantly shows all valid 5-letter words that contain input letters
+  - 🟩 **Green Tiles** — specify correct letters at correct positions
+  - 🟨 **Yellow Characters** — specify letters that are present but in unknown positions
+  - ⬛ **Gray Characters** — exclude letters that are not in the word
+- 🗂️ **Word History** — view previous “Word of the Day” entries along with definitions
+- 📬 **Submit Page** — easily submit a new word and trigger GitHub Actions to update history
 
 ## 🛠️ How It Works
 
 - A list of valid English 5-letter words is preprocessed using NLTK and stored in a `valid_words.json` file.
+- Input tiles capture your current Wordle guess with the Green, Yellow and Gray characters.
 - JavaScript filters this list based on your input.
 
-## 🚀 Usage
+## 🕹 Usage
 
-1. Type a partial set of letters (like `trs`) into the input box.
-2. Click **Search**.
-3. See all valid 5-letter words that contain those letters.
+1. Fill in the green tile positions if you know any correct letters.
+2. Add yellow tiles to indicate correct letters at unknown positions.
+3. Type gray letters (not in the word) into the exclusion box.
+4. Hit **Enter** or click **Search** to see results.
+
+## 🌐 Pages
+
+- `/index.html` — Main Wordle helper tool.
+- `/history.html` — Browse past submitted words and their definitions.
+- `/submit.html` — Submit today’s word and trigger update via GitHub Actions.
+
+## 🚀 Deploying
+
+1. **Fork this repo** to your own GitHub account.
+2. Go to your repository **Settings > Pages**, and under “Source” choose the `main` branch and `/ (root)` folder.
+3. Visit `https://your-username.github.io/wordle-word-finder` to see it live.
+
+### ✍️ Submitting the Word of the Day
+
+To use the `Submit` page:
+
+* Generate a GitHub [Personal Access Token](https://github.com/settings/tokens/new?scopes=repo) with `repo` scope.
+* Use it to authorize the form on `/submit.html`, which triggers a GitHub Actions workflow to append the word and its definition to the `word_otd.json` file.
 
 ## 📄 License
 
-MIT License. Use freely.
+MIT License. Use freely and improve it!
 
 ### Made with ❤️ for Wordle fans.
