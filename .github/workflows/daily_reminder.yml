@@ -2,8 +2,8 @@ name: Send Daily Word Reminder
 
 on:
   schedule:
-    # Runs at 8:00 AM UTC every day use https://crontab.guru/ to generate cron schedules.
-    - cron: '0 8 * * *'
+    # Runs at 4:30 AM UTC -> 10:00 AM IST every day
+    - cron: '30 4 * * *'
   workflow_dispatch: # for manual testing
 
 jobs:
@@ -14,9 +14,9 @@ jobs:
       - name: Send reminder email
         uses: dawidd6/action-send-mail@v6
         with:
-          # Required mail server credentials
-          server_address: smtp.gmail.com # Use your email provider's SMTP server
+          server_address: smtp.gmail.com
           server_port: 465
+          # Use GitHub Secrets to store sensitive information
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
 
