@@ -36,6 +36,20 @@ def update_word_of_the_day(new_word):
 
     new_word = new_word.lower()
 
+    if not os.path.exists(VALID_WORDS_PATH):
+        print(f"Valid words file '{VALID_WORDS_PATH}' not found.")
+        sys.exit(1)
+    with open(VALID_WORDS_PATH, "r", encoding="utf-8") as f:
+        try:
+            valid_words = set(json.load(f))
+        except json.JSONDecodeError:
+            print(f"Could not load valid words from '{VALID_WORDS_PATH}'.")
+            sys.exit(1)
+
+    if new_word not in valid_words:
+        print(f"The word '{new_word}' is not in the list of valid words.")
+        sys.exit(1)
+
     wotd_history = []
     if os.path.exists(WOTD_HISTORY_PATH):
         with open(WOTD_HISTORY_PATH, "r", encoding="utf-8") as f:
