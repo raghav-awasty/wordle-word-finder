@@ -27,10 +27,14 @@ jobs:
             
             It's time to update the Word of the Day.
             
-            1. If you haven't played today, here is the link: https://www.nytimes.com/games/wordle/index.html
+            1. If you haven't played today, here is the link:
+              https://www.nytimes.com/games/wordle/index.html
+
+            2. Need some assistance? Use the Word Finder:
+              https://raghav-awasty.github.io/wordle-word-finder/index.html
             
-            2. Once you have the word, enter it here:
-            https://raghav-awasty.github.io/wordle-word-finder/submit.html
+            3. Once you have the word, enter it here:
+              https://raghav-awasty.github.io/wordle-word-finder/submit.html
             
             Thanks!
 
