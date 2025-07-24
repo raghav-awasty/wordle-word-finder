@@ -228,10 +228,22 @@
           }
         }
 
-        // Check that all grey characters are not in the word
+        // Check grey characters with special logic for characters that also appear in green/yellow
+        const greenSet = new Set(greenPositions.filter(char => char !== null));
+        const greenYellowSet = new Set([...greenSet, ...yellowSet]);
+        
         for (let ch of graySet) {
-          if (word.includes(ch)) {
-            return false;
+          if (greenYellowSet.has(ch)) {
+            // If character appears in both green/yellow and grey, check occurrence count
+            const occurrences = (word.match(new RegExp(ch, 'g')) || []).length;
+            if (occurrences > 1) {
+              return false; // Remove words with more than one occurrence
+            }
+          } else {
+            // If character only appears in grey, exclude words containing it
+            if (word.includes(ch)) {
+              return false;
+            }
           }
         }
     
