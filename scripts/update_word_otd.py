@@ -8,8 +8,8 @@ import os
 import sys
 import requests
 
-VALID_WORDS_PATH = "../data/valid_words.json"
-WOTD_HISTORY_PATH = "../data/word_otd.json"
+VALID_WORDS_PATH = "./data/valid_words.json"
+WOTD_HISTORY_PATH = "./data/word_otd.json"
 
 
 def get_word_definition(word):
