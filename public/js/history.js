@@ -287,7 +287,7 @@ Calendar.prototype.prevMonth = function() {
 // Load word history data and initialize calendar
 async function loadHistory() {
     try {
-        const history = await DataLoader.loadJSON('data/word_otd.json');
+        const history = await DataLoader.loadJSON('../../data/word_otd.json');
         wordsData = history.map(entry => ({
             date: new Date(entry.date),
             word: entry.word,
