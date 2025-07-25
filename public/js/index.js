@@ -5,7 +5,7 @@ let validWords = [];
 // Load valid words data
 async function loadWords() {
     try {
-        validWords = await DataLoader.loadJSON('../../data/valid_words.json');
+        validWords = await DataLoader.loadJSON('data/valid_words.json');
     } catch (error) {
         console.error('Failed to load valid words:', error);
     }
