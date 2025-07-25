@@ -33,12 +33,12 @@ jobs:
         # Pass the user-provided word from the input to the script as an environment variable
         env:
           WORD_TO_ADD: ${{ github.event.inputs.word }}
-        run: python ./update_word_otd.py
+        run: python ./scripts/update_word_otd.py
 
       - name: Commit and push changes
         run: |
           git config --global user.name 'Raghav Awasty'
           git config --global user.email 'raghav.awasty@gmail.com'
-          git add word_otd.json
+          git add data/word_otd.json
           git diff --staged --quiet || git commit -m "Set Word of the Day: ${{ github.event.inputs.word }}"
           git push

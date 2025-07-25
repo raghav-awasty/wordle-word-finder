@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wordle Word Finder</title>
+
+  <!-- Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="../public/css/base.css">
+  <link rel="stylesheet" href="../public/css/index.css">
+</head>
+<body>
+  <div class="nav-buttons">
+    <a href="history.html">📜 Word History</a>
+    <a href="submit.html">📝 Submit Word</a>
+  </div>
+
+  <h1>Wordle Word Finder</h1>
+  <p>Green letters (known letter positions):</p>
+  <div id="tileRow" class="tile-inputs">
+    <input type="text" maxlength="1" id="pos0" class="tile" />
+    <input type="text" maxlength="1" id="pos1" class="tile" />
+    <input type="text" maxlength="1" id="pos2" class="tile" />
+    <input type="text" maxlength="1" id="pos3" class="tile" />
+    <input type="text" maxlength="1" id="pos4" class="tile" />
+  </div>
+  
+  <div class="input-group">
+    <label for="yellowInput">Yellow letters (must be included, any position):</label><br>
+    <input type="text" id="yellowInput" placeholder="e.g. aei" maxlength="5" />
+  </div>
+
+  <div class="input-group">
+    <label for="grayInput">Gray letters (not in the word):</label><br>
+    <input type="text" id="grayInput" placeholder="e.g. rstln">
+  </div>
+
+  <button onclick="searchWords()">Search</button>
+
+  <div id="results"></div>
+
+  <!-- Scripts -->
+  <script src="../public/js/common.js"></script>
+  <script src="../public/js/index.js"></script>
+</body>
+</html>

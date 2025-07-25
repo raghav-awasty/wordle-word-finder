@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word of the Day Submitter</title>
+    
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet"> 
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="../public/css/base.css">
+    <link rel="stylesheet" href="../public/css/submit.css">
+</head>
+<body>
+    <h1>Submit Word of the Day</h1>
+
+    <label for="word">Today's 5-Letter Word:</label>
+    <input type="text" id="word" name="word" maxlength="5" pattern="[a-zA-Z]{5}" required>
+
+    <label for="pat">GitHub Personal Access Token (PAT):</label>
+    <input type="password" id="pat" name="pat" required>
+    <p class="warning">
+        Your PAT is used to authorize the request and is NOT stored.
+        Create a <a href="https://github.com/settings/tokens/new?scopes=repo&description=Wordle%20Workflow%20Trigger"
+            target="_blank" rel="noopener">new token with 'repo' scope.</a>
+    </p>
+
+    <button onclick="triggerWorkflow()">Submit Word</button>
+
+    <div id="status"></div>
+
+    <a href="index.html" class="nav-link">Back to Wordle Finder</a>
+
+    <!-- Scripts -->
+    <script src="../public/js/common.js"></script>
+    <script src="../public/js/submit.js"></script>
+</body>
+</html>
