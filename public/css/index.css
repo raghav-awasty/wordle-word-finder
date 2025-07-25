@@ -1,0 +1,84 @@
+/* Index Page Specific Styles */
+
+body {
+    padding: 1rem;
+    max-width: 600px;
+}
+
+h1 {
+    font-size: 2.5rem;
+}
+
+.input-group {
+    margin-bottom: 1.5rem;
+}
+
+input {
+    width: 100%;
+    max-width: 300px;
+}
+
+.tile-inputs {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 2rem;
+}
+
+.tile {
+    width: 4rem;
+    height: 4rem;
+    text-align: center;
+    font-size: 2rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    background-color: #538d4e; /* green tile */
+    color: white;
+    border: 2px solid #818384;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.tile:focus {
+    border-color: #3a3a3c;
+}
+
+#results {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #272729;
+    border-radius: 8px;
+    min-height: 50px;
+    text-align: center;
+    white-space: pre-wrap;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.word {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background-color: #3a3a3c;
+    border-radius: 4px;
+    font-family: 'Inter', monospace;
+    font-size: 1rem;
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 1rem;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    .tile {
+        width: 3rem;
+        height: 3rem;
+        font-size: 0.9rem;
+    }
+}
