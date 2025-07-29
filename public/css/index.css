@@ -44,6 +44,12 @@ input {
     border-color: #3a3a3c;
 }
 
+.yellow-tile {
+    background-color: #b59f3b; /* yellow tile */
+    font-size: 1rem;
+    text-transform: uppercase;
+}
+
 #results {
     margin-top: 1rem;
     padding: 1rem;

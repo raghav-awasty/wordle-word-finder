@@ -13,10 +13,7 @@ async function loadWords() {
 
 // Main search function
 function searchWords() {
-    const yellowInput = document.getElementById('yellowInput').value.toLowerCase().replace(/[^a-z]/g, '');
     const grayLetters = document.getElementById('grayInput').value.toLowerCase();
-
-    const yellowSet = new Set(yellowInput);
     const graySet = new Set(grayLetters);
 
     // Read green-tile characters by position
@@ -24,6 +21,18 @@ function searchWords() {
     for (let i = 0; i < 5; i++) {
         const char = document.getElementById(`pos${i}`).value.toLowerCase();
         greenPositions[i] = (char >= 'a' && char <= 'z') ? char : null;
+    }
+
+    // Read yellow-tile characters by position (characters that should NOT be in these positions)
+    const yellowPositions = [];
+    const allYellowChars = new Set();
+    for (let i = 0; i < 5; i++) {
+        const chars = document.getElementById(`yellow${i}`).value.toLowerCase().replace(/[^a-z]/g, '');
+        yellowPositions[i] = new Set(chars);
+        // Add all yellow characters to the overall set
+        for (let char of chars) {
+            allYellowChars.add(char);
+        }
     }
 
     const results = validWords.filter(word => {
@@ -34,8 +43,15 @@ function searchWords() {
             }
         }
 
-        // Check that all yellow characters are in the word (any position)
-        for (let ch of yellowSet) {
+        // Check yellow position constraints (characters that should NOT be in specific positions)
+        for (let i = 0; i < 5; i++) {
+            if (yellowPositions[i].has(word[i])) {
+                return false; // Character is in a position where it shouldn't be
+            }
+        }
+
+        // Check that all yellow position characters are actually in the word somewhere
+        for (let ch of allYellowChars) {
             if (!word.includes(ch)) {
                 return false;
             }
@@ -43,7 +59,7 @@ function searchWords() {
 
         // Check grey characters with special logic for characters that also appear in green/yellow
         const greenSet = new Set(greenPositions.filter(char => char !== null));
-        const greenYellowSet = new Set([...greenSet, ...yellowSet]);
+        const greenYellowSet = new Set([...greenSet, ...allYellowChars]);
         
         for (let ch of graySet) {
             if (greenYellowSet.has(ch)) {
