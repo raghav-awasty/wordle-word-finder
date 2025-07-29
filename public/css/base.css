@@ -95,6 +95,7 @@ button:hover {
 
 .nav-buttons a:hover {
     background-color: #6aaa64;
+    text-decoration: none;
 }
 
 /* Links */
@@ -170,8 +171,6 @@ a:hover {
     }
     
     .nav-buttons {
-        flex-direction: column;
-        align-items: center;
         gap: 0.5rem;
     }
 }

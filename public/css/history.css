@@ -401,6 +401,10 @@ body {
 }
 
 @media (max-width: 768px) {
+    body {
+        padding: 1rem;
+    }
+    
     .day {
         min-height: 60px;
         padding: 0.5rem 0.25rem;
