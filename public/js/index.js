@@ -27,7 +27,7 @@ function searchWords() {
     const yellowPositions = [];
     const allYellowChars = new Set();
     for (let i = 0; i < 5; i++) {
-        const chars = document.getElementById(`yellow${i}`).value.toLowerCase().replace(/[^a-z]/g, '');
+        const chars = getYellowTileChars(i);
         yellowPositions[i] = new Set(chars);
         // Add all yellow characters to the overall set
         for (let char of chars) {
@@ -82,6 +82,31 @@ function searchWords() {
     displayResults(results);
 }
 
+// Get characters from yellow tile
+function getYellowTileChars(index) {
+    const tile = document.getElementById(`yellow${index}`);
+    const text = tile.textContent || tile.innerText || '';
+    return text.toLowerCase().replace(/[^a-z]/g, '');
+}
+
+// Update yellow tile display
+function updateYellowTileDisplay(index) {
+    const tile = document.getElementById(`yellow${index}`);
+    const chars = getYellowTileChars(index);
+    
+    // Clear the tile
+    tile.innerHTML = '';
+    
+    // Add characters as grid items (max 4)
+    const maxChars = Math.min(chars.length, 4);
+    for (let i = 0; i < maxChars; i++) {
+        const charDiv = document.createElement('div');
+        charDiv.className = 'yellow-char';
+        charDiv.textContent = chars[i];
+        tile.appendChild(charDiv);
+    }
+}
+
 // Display search results
 function displayResults(results) {
     const resultsContainer = document.getElementById('results');
@@ -94,7 +119,8 @@ function displayResults(results) {
 
 // Handle tile navigation and input
 function setupTileHandlers() {
-    document.querySelectorAll('.tile').forEach((tile, index, tiles) => {
+    // Handle green tiles (input elements)
+    document.querySelectorAll('#tileRow .tile').forEach((tile, index, tiles) => {
         tile.addEventListener('input', () => {
             if (tile.value && index < tiles.length - 1) {
                 tiles[index + 1].focus();
@@ -125,10 +151,54 @@ function setupTileHandlers() {
     });
 }
 
+// Handle yellow tile input and display
+function setupYellowTileHandlers() {
+    for (let i = 0; i < 5; i++) {
+        const tile = document.getElementById(`yellow${i}`);
+        
+        tile.addEventListener('input', (event) => {
+            // Store the current text content
+            const rawText = tile.textContent || tile.innerText || '';
+            const cleanText = rawText.toLowerCase().replace(/[^a-z]/g, '');
+            
+            // Limit to 4 characters
+            const limitedText = cleanText.slice(0, 4);
+            
+            // Update the display
+            setTimeout(() => updateYellowTileDisplay(i), 0);
+        });
+        
+        tile.addEventListener('keydown', (event) => {
+            const currentText = getYellowTileChars(i);
+            
+            // Prevent more than 4 characters
+            if (currentText.length >= 4 && event.key.length === 1 && event.key.match(/[a-z]/i)) {
+                event.preventDefault();
+            }
+            
+            // Allow only letters, backspace, delete, and arrow keys
+            if (event.key.length === 1 && !event.key.match(/[a-z]/i)) {
+                event.preventDefault();
+            }
+        });
+        
+        tile.addEventListener('paste', (event) => {
+            event.preventDefault();
+            const paste = (event.clipboardData || window.clipboardData).getData('text');
+            const cleanPaste = paste.toLowerCase().replace(/[^a-z]/g, '').slice(0, 4);
+            
+            // Insert the clean text
+            tile.textContent = cleanPaste;
+            updateYellowTileDisplay(i);
+        });
+    }
+}
+
 // Initialize the page
 function initializeIndexPage() {
     loadWords();
     setupTileHandlers();
+    setupYellowTileHandlers();
     addEnterKeyHandler(searchWords);
 }
 

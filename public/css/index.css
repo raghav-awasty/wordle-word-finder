@@ -46,8 +46,46 @@ input {
 
 .yellow-tile {
     background-color: #b59f3b; /* yellow tile */
-    font-size: 1rem;
+    font-size: 1.2rem;
     text-transform: uppercase;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
+    padding: 4px;
+    align-items: center;
+    justify-items: center;
+    line-height: 1;
+    overflow: hidden;
+    cursor: text;
+}
+
+.yellow-tile:empty::before {
+    content: attr(data-placeholder);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8rem;
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: none;
+}
+
+.yellow-tile:focus {
+    outline: 2px solid #ffffff;
+    outline-offset: -2px;
+}
+
+.yellow-char {
+    background-color: transparent;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: bold;
 }
 
 #results {
