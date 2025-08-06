@@ -16,21 +16,21 @@ A minimal web-based tool to help you find all valid 5-letter English words that 
 
 ## 🛠️ How It Works
 
-- A list of valid English 5-letter words is preprocessed using NLTK and stored in a `valid_words.json` file.
+- A list of valid English 5-letter words is stored in `valid_words.json` (from [@dracos](https://gist.github.com/dracos/dd0668f281e685bad51479e5acaadb93)).
 - Input tiles capture your current Wordle guess with the Green, Yellow and Gray characters.
 - JavaScript filters this list based on your input.
 
 ## 🕹 Usage
 
-1. Fill in the green tile positions if you know any correct letters.
-2. Add yellow tiles to indicate correct letters at unknown positions.
+1. Fill in the green tile positions if you know any correct letter.
+2. Add yellow tiles to indicate correct letters at incorrect positions.
 3. Type gray letters (not in the word) into the exclusion box.
 4. Hit **Enter** or click **Search** to see results.
 
 ## 🌐 Pages
 
 - `/index.html` — Main Wordle helper tool.
-- `/history.html` — Browse past submitted words and their definitions.
+- `/history.html` — Browse past submitted words and their definitions. Build the streak!
 - `/submit.html` — Submit today’s word and trigger update via GitHub Actions.
 
 ## 🚀 Deploying
