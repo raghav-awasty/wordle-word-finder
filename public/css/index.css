@@ -125,4 +125,13 @@ input {
         height: 3rem;
         font-size: 0.9rem;
     }
+
+    .yellow-tile {
+        padding: 1px;
+    }
+
+    .yellow-char{
+        min-height: 1rem;
+        font-size: 0.9rem;
+    }
 }
