@@ -98,6 +98,13 @@ input {
     animation: blink 1s infinite;
 }
 
+.inline-cursor {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.2rem;
+    animation: blink 1s infinite;
+    margin-left: 1px;
+}
+
 .yellow-char.empty {
     opacity: 0.3;
 }

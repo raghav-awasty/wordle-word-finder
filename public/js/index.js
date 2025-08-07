@@ -98,23 +98,28 @@ function updateYellowTileDisplay(index) {
     tile.innerHTML = '';
     
     // Create grid structure with cursor support
-    const maxChars = Math.min(chars.length, 4);
     const showCursor = document.activeElement === tile;
     
     // Fill grid positions (4 positions total in 2x2 grid)
     for (let i = 0; i < 4; i++) {
         const cellDiv = document.createElement('div');
         
-        if (showCursor && i === cursorPos) {
-            // Show cursor at this position (regardless of whether there's a character)
+        if (i < chars.length) {
+            // Position has a character
+            cellDiv.className = 'yellow-char';
+            
+            // If cursor is at this position, show character with cursor
+            if (showCursor && i === cursorPos) {
+                cellDiv.innerHTML = `${chars[i].toUpperCase()}<span class="inline-cursor">|</span>`;
+            } else {
+                cellDiv.textContent = chars[i].toUpperCase();
+            }
+        } else if (showCursor && i === cursorPos) {
+            // Empty position with cursor
             cellDiv.className = 'yellow-cursor';
             cellDiv.textContent = '|';
-        } else if (i < chars.length) {
-            // Position has a character (no cursor here)
-            cellDiv.className = 'yellow-char';
-            cellDiv.textContent = chars[i].toUpperCase();
         } else {
-            // Empty position (no cursor here)
+            // Empty position (no cursor)
             cellDiv.className = 'yellow-char empty';
         }
         
