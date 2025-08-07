@@ -85,25 +85,45 @@ function searchWords() {
 // Get characters from yellow tile
 function getYellowTileChars(index) {
     const tile = document.getElementById(`yellow${index}`);
-    const text = tile.textContent || tile.innerText || '';
-    return text.toLowerCase().replace(/[^a-z]/g, '');
+    return tile.dataset.chars || '';
 }
 
 // Update yellow tile display
 function updateYellowTileDisplay(index) {
     const tile = document.getElementById(`yellow${index}`);
-    const chars = getYellowTileChars(index);
+    const chars = tile.dataset.chars || '';
+    const cursorPos = parseInt(tile.dataset.cursorPos || '0');
     
     // Clear the tile
     tile.innerHTML = '';
     
-    // Add characters as grid items (max 4)
-    const maxChars = Math.min(chars.length, 4);
-    for (let i = 0; i < maxChars; i++) {
-        const charDiv = document.createElement('div');
-        charDiv.className = 'yellow-char';
-        charDiv.textContent = chars[i];
-        tile.appendChild(charDiv);
+    // Create grid structure with cursor support
+    const showCursor = document.activeElement === tile;
+    
+    // Fill grid positions (4 positions total in 2x2 grid)
+    for (let i = 0; i < 4; i++) {
+        const cellDiv = document.createElement('div');
+        
+        if (i < chars.length) {
+            // Position has a character
+            cellDiv.className = 'yellow-char';
+            
+            // If cursor is right before this character, show cursor then character
+            if (showCursor && i === cursorPos) {
+                cellDiv.innerHTML = `<span class="inline-cursor">|</span>${chars[i].toUpperCase()}`;
+            } else {
+                cellDiv.textContent = chars[i].toUpperCase();
+            }
+        } else if (showCursor && i === cursorPos) {
+            // Empty position with cursor (cursor at end)
+            cellDiv.className = 'yellow-cursor';
+            cellDiv.textContent = '|';
+        } else {
+            // Empty position (no cursor)
+            cellDiv.className = 'yellow-char empty';
+        }
+        
+        tile.appendChild(cellDiv);
     }
 }
 
@@ -156,41 +176,110 @@ function setupYellowTileHandlers() {
     for (let i = 0; i < 5; i++) {
         const tile = document.getElementById(`yellow${i}`);
         
-        tile.addEventListener('input', (event) => {
-            // Store the current text content
-            const rawText = tile.textContent || tile.innerText || '';
-            const cleanText = rawText.toLowerCase().replace(/[^a-z]/g, '');
-            
-            // Limit to 4 characters
-            const limitedText = cleanText.slice(0, 4);
-            
-            // Update the display
-            setTimeout(() => updateYellowTileDisplay(i), 0);
-        });
+        // Set up initial state
+        tile.dataset.chars = '';
+        tile.dataset.cursorPos = '0';
         
         tile.addEventListener('keydown', (event) => {
-            const currentText = getYellowTileChars(i);
+            const currentChars = tile.dataset.chars || '';
+            const cursorPos = parseInt(tile.dataset.cursorPos || '0');
             
-            // Prevent more than 4 characters
-            if (currentText.length >= 4 && event.key.length === 1 && event.key.match(/[a-z]/i)) {
-                event.preventDefault();
-            }
+            event.preventDefault(); // Prevent all default behavior
             
-            // Allow only letters, backspace, delete, and arrow keys
-            if (event.key.length === 1 && !event.key.match(/[a-z]/i)) {
-                event.preventDefault();
+            if (event.key === 'Backspace') {
+                if (cursorPos > 0) {
+                    // Delete character before cursor
+                    const newChars = currentChars.slice(0, cursorPos - 1) + currentChars.slice(cursorPos);
+                    tile.dataset.chars = newChars;
+                    tile.dataset.cursorPos = Math.max(0, cursorPos - 1).toString();
+                    updateYellowTileDisplay(i);
+                }
+            } else if (event.key === 'Delete') {
+                if (cursorPos < currentChars.length) {
+                    // Delete character at cursor
+                    const newChars = currentChars.slice(0, cursorPos) + currentChars.slice(cursorPos + 1);
+                    tile.dataset.chars = newChars;
+                    updateYellowTileDisplay(i);
+                }
+            } else if (event.key === 'ArrowLeft') {
+                // Move cursor left
+                tile.dataset.cursorPos = Math.max(0, cursorPos - 1).toString();
+                updateYellowTileDisplay(i);
+            } else if (event.key === 'ArrowRight') {
+                // Move cursor right
+                tile.dataset.cursorPos = Math.min(currentChars.length, cursorPos + 1).toString();
+                updateYellowTileDisplay(i);
+            } else if (event.key === 'Home') {
+                // Move cursor to start
+                tile.dataset.cursorPos = '0';
+                updateYellowTileDisplay(i);
+            } else if (event.key === 'End') {
+                // Move cursor to end
+                tile.dataset.cursorPos = currentChars.length.toString();
+                updateYellowTileDisplay(i);
+            } else if (event.key.length === 1 && event.key.match(/[a-zA-Z]/)) {
+                // Insert character at cursor position
+                if (currentChars.length < 4) {
+                    const newChars = currentChars.slice(0, cursorPos) + event.key.toLowerCase() + currentChars.slice(cursorPos);
+                    tile.dataset.chars = newChars;
+                    tile.dataset.cursorPos = (cursorPos + 1).toString();
+                    updateYellowTileDisplay(i);
+                }
             }
         });
         
         tile.addEventListener('paste', (event) => {
             event.preventDefault();
-            const paste = (event.clipboardData || window.clipboardData).getData('text');
-            const cleanPaste = paste.toLowerCase().replace(/[^a-z]/g, '').slice(0, 4);
+            const currentChars = tile.dataset.chars || '';
+            const cursorPos = parseInt(tile.dataset.cursorPos || '0');
             
-            // Insert the clean text
-            tile.textContent = cleanPaste;
+            const paste = (event.clipboardData || window.clipboardData).getData('text');
+            const cleanPaste = paste.toLowerCase().replace(/[^a-z]/g, '');
+            
+            // Insert pasted text at cursor, respecting 4-character limit
+            const beforeCursor = currentChars.slice(0, cursorPos);
+            const afterCursor = currentChars.slice(cursorPos);
+            const newChars = (beforeCursor + cleanPaste + afterCursor).slice(0, 4);
+            
+            tile.dataset.chars = newChars;
+            tile.dataset.cursorPos = Math.min(cursorPos + cleanPaste.length, newChars.length).toString();
             updateYellowTileDisplay(i);
         });
+        
+        // Handle focus
+        tile.addEventListener('focus', () => {
+            // Set cursor to end if not already set
+            const currentChars = tile.dataset.chars || '';
+            if (!tile.dataset.cursorPos) {
+                tile.dataset.cursorPos = currentChars.length.toString();
+            }
+            updateYellowTileDisplay(i);
+        });
+        
+        // Handle blur
+        tile.addEventListener('blur', () => {
+            updateYellowTileDisplay(i);
+        });
+        
+        // Handle mouse clicks on character positions
+        tile.addEventListener('click', (event) => {
+            // Calculate which grid position was clicked
+            const rect = tile.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            // Simple grid position calculation (2x2 grid)
+            const col = x < rect.width / 2 ? 0 : 1;
+            const row = y < rect.height / 2 ? 0 : 1;
+            const gridPos = row * 2 + col;
+            
+            const currentChars = tile.dataset.chars || '';
+            tile.dataset.cursorPos = Math.min(gridPos, currentChars.length).toString();
+            updateYellowTileDisplay(i);
+        });
+        
+        // Initialize display
+        updateYellowTileDisplay(i);
     }
 }
 
