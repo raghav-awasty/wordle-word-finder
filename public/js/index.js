@@ -105,21 +105,16 @@ function updateYellowTileDisplay(index) {
     for (let i = 0; i < 4; i++) {
         const cellDiv = document.createElement('div');
         
-        if (i < chars.length) {
-            // Position has a character
-            cellDiv.className = 'yellow-char';
-            cellDiv.textContent = chars[i].toUpperCase();
-            
-            // Add cursor class if this is cursor position
-            if (showCursor && i === cursorPos) {
-                cellDiv.classList.add('cursor-here');
-            }
-        } else if (showCursor && i === cursorPos && i === chars.length) {
-            // Empty position with cursor
+        if (showCursor && i === cursorPos) {
+            // Show cursor at this position (regardless of whether there's a character)
             cellDiv.className = 'yellow-cursor';
             cellDiv.textContent = '|';
+        } else if (i < chars.length) {
+            // Position has a character (no cursor here)
+            cellDiv.className = 'yellow-char';
+            cellDiv.textContent = chars[i].toUpperCase();
         } else {
-            // Empty position
+            // Empty position (no cursor here)
             cellDiv.className = 'yellow-char empty';
         }
         
