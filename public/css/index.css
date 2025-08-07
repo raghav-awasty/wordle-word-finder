@@ -60,17 +60,6 @@ input {
     cursor: text;
 }
 
-.yellow-tile:empty::before {
-    content: attr(data-placeholder);
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 0.8rem;
-    grid-column: 1 / -1;
-    grid-row: 1 / -1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-transform: none;
-}
 
 .yellow-tile:focus {
     outline: 2px solid #ffffff;

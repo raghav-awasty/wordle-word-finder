@@ -105,7 +105,6 @@ a {
 }
 
 a:hover {
-    /* color: #6aaa64; */
     text-decoration: underline;
 }
 
@@ -124,41 +123,7 @@ a:hover {
     text-decoration: underline;
 }
 
-/* Color Variables */
-:root {
-    --bg-primary: #121213;
-    --bg-secondary: #272729;
-    --bg-tertiary: #3a3a3c;
-    --text-primary: #ffffff;
-    --text-secondary: #d7dadc;
-    --text-muted: #818384;
-    --accent-green: #538d4e;
-    --accent-green-hover: #6aaa64;
-    --accent-yellow: #b59f3b;
-    --border-color: #3a3a3c;
-    --error-color: #cf222e;
-}
 
-/* Utility Classes */
-.text-center {
-    text-align: center;
-}
-
-.mb-1 {
-    margin-bottom: 1rem;
-}
-
-.mb-2 {
-    margin-bottom: 2rem;
-}
-
-.mt-1 {
-    margin-top: 1rem;
-}
-
-.mt-2 {
-    margin-top: 2rem;
-}
 
 /* Responsive Base */
 @media (max-width: 768px) {

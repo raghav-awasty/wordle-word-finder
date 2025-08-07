@@ -82,17 +82,3 @@ const DataLoader = {
     }
 };
 
-// Export for use in other modules (if using modules)
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        createElement,
-        addEnterKeyHandler,
-        showStatus,
-        DateUtils,
-        DataLoader,
-        GITHUB_USERNAME,
-        GITHUB_REPO,
-        WORKFLOW_FILE_NAME,
-        GIT_BRANCH
-    };
-}
