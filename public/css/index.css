@@ -37,11 +37,13 @@ input {
     border: 2px solid #818384;
     border-radius: 8px;
     outline: none;
-    transition: border-color 0.3s;
+    transition: all 0.3s ease;
 }
 
 .tile:focus {
-    border-color: #3a3a3c;
+    border-color: #ffffff;
+    box-shadow: 0 0 0 1px #ffffff, 0 0 8px rgba(255, 255, 255, 0.3);
+    transform: scale(1.02);
 }
 
 .yellow-tile {
@@ -58,12 +60,14 @@ input {
     line-height: 1;
     overflow: hidden;
     cursor: text;
+    border: 2px solid #818384;
+    transition: all 0.3s ease;
 }
 
-
 .yellow-tile:focus {
-    outline: 2px solid #ffffff;
-    outline-offset: -2px;
+    border-color: #ffffff;
+    box-shadow: 0 0 0 1px #ffffff, 0 0 8px rgba(255, 255, 255, 0.3);
+    transform: scale(1.02);
 }
 
 .yellow-char {
@@ -139,6 +143,10 @@ input {
         width: 3rem;
         height: 3rem;
         font-size: 0.9rem;
+    }
+    
+    .tile:focus, .yellow-tile:focus {
+        transform: scale(1.05); /* Slightly more pronounced on mobile */
     }
 
     .yellow-tile {
