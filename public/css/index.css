@@ -88,6 +88,21 @@ input {
     font-weight: bold;
 }
 
+.yellow-cursor {
+    color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 1.5rem;
+    font-size: 1.2rem;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
 #results {
     margin-top: 1rem;
     padding: 1rem;

@@ -85,14 +85,13 @@ function searchWords() {
 // Get characters from yellow tile
 function getYellowTileChars(index) {
     const tile = document.getElementById(`yellow${index}`);
-    const text = tile.textContent || tile.innerText || '';
-    return text.toLowerCase().replace(/[^a-z]/g, '');
+    return tile.dataset.chars || '';
 }
 
 // Update yellow tile display
 function updateYellowTileDisplay(index) {
     const tile = document.getElementById(`yellow${index}`);
-    const chars = getYellowTileChars(index);
+    const chars = tile.dataset.chars || '';
     
     // Clear the tile
     tile.innerHTML = '';
@@ -102,8 +101,16 @@ function updateYellowTileDisplay(index) {
     for (let i = 0; i < maxChars; i++) {
         const charDiv = document.createElement('div');
         charDiv.className = 'yellow-char';
-        charDiv.textContent = chars[i];
+        charDiv.textContent = chars[i].toUpperCase();
         tile.appendChild(charDiv);
+    }
+    
+    // Add a cursor indicator if focused
+    if (document.activeElement === tile && chars.length < 4) {
+        const cursorDiv = document.createElement('div');
+        cursorDiv.className = 'yellow-cursor';
+        cursorDiv.textContent = '|';
+        tile.appendChild(cursorDiv);
     }
 }
 
@@ -156,29 +163,54 @@ function setupYellowTileHandlers() {
     for (let i = 0; i < 5; i++) {
         const tile = document.getElementById(`yellow${i}`);
         
-        tile.addEventListener('input', (event) => {
-            // Store the current text content
-            const rawText = tile.textContent || tile.innerText || '';
-            const cleanText = rawText.toLowerCase().replace(/[^a-z]/g, '');
+        // Set up initial state
+        tile.dataset.chars = '';
+        
+        tile.addEventListener('beforeinput', (event) => {
+            // Prevent default behavior and handle input manually
+            event.preventDefault();
             
-            // Limit to 4 characters
-            const limitedText = cleanText.slice(0, 4);
+            const currentChars = tile.dataset.chars || '';
             
-            // Update the display
-            setTimeout(() => updateYellowTileDisplay(i), 0);
+            if (event.inputType === 'insertText' || event.inputType === 'insertCompositionText') {
+                const newChar = event.data;
+                if (newChar && newChar.match(/[a-zA-Z]/) && currentChars.length < 4) {
+                    // Add new character
+                    tile.dataset.chars = currentChars + newChar.toLowerCase();
+                    updateYellowTileDisplay(i);
+                }
+            } else if (event.inputType === 'deleteContentBackward') {
+                // Remove last character
+                if (currentChars.length > 0) {
+                    tile.dataset.chars = currentChars.slice(0, -1);
+                    updateYellowTileDisplay(i);
+                }
+            } else if (event.inputType === 'deleteContentForward') {
+                // Clear all content
+                tile.dataset.chars = '';
+                updateYellowTileDisplay(i);
+            }
         });
         
         tile.addEventListener('keydown', (event) => {
-            const currentText = getYellowTileChars(i);
+            const currentChars = tile.dataset.chars || '';
             
-            // Prevent more than 4 characters
-            if (currentText.length >= 4 && event.key.length === 1 && event.key.match(/[a-z]/i)) {
+            if (event.key === 'Backspace') {
                 event.preventDefault();
-            }
-            
-            // Allow only letters, backspace, delete, and arrow keys
-            if (event.key.length === 1 && !event.key.match(/[a-z]/i)) {
+                if (currentChars.length > 0) {
+                    tile.dataset.chars = currentChars.slice(0, -1);
+                    updateYellowTileDisplay(i);
+                }
+            } else if (event.key === 'Delete') {
                 event.preventDefault();
+                tile.dataset.chars = '';
+                updateYellowTileDisplay(i);
+            } else if (event.key.length === 1 && event.key.match(/[a-zA-Z]/)) {
+                event.preventDefault();
+                if (currentChars.length < 4) {
+                    tile.dataset.chars = currentChars + event.key.toLowerCase();
+                    updateYellowTileDisplay(i);
+                }
             }
         });
         
@@ -187,10 +219,34 @@ function setupYellowTileHandlers() {
             const paste = (event.clipboardData || window.clipboardData).getData('text');
             const cleanPaste = paste.toLowerCase().replace(/[^a-z]/g, '').slice(0, 4);
             
-            // Insert the clean text
-            tile.textContent = cleanPaste;
+            tile.dataset.chars = cleanPaste;
             updateYellowTileDisplay(i);
         });
+        
+        // Handle focus to position cursor properly
+        tile.addEventListener('focus', () => {
+            // Update display to show cursor
+            updateYellowTileDisplay(i);
+            
+            // Clear any existing selection and position cursor at end
+            setTimeout(() => {
+                const range = document.createRange();
+                const sel = window.getSelection();
+                range.selectNodeContents(tile);
+                range.collapse(false); // Collapse to end
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }, 0);
+        });
+        
+        // Handle blur to hide cursor
+        tile.addEventListener('blur', () => {
+            // Update display to hide cursor
+            updateYellowTileDisplay(i);
+        });
+        
+        // Initialize display
+        updateYellowTileDisplay(i);
     }
 }
 
