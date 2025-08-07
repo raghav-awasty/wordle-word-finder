@@ -92,25 +92,38 @@ function getYellowTileChars(index) {
 function updateYellowTileDisplay(index) {
     const tile = document.getElementById(`yellow${index}`);
     const chars = tile.dataset.chars || '';
+    const cursorPos = parseInt(tile.dataset.cursorPos || '0');
     
     // Clear the tile
     tile.innerHTML = '';
     
-    // Add characters as grid items (max 4)
+    // Create grid structure with cursor support
     const maxChars = Math.min(chars.length, 4);
-    for (let i = 0; i < maxChars; i++) {
-        const charDiv = document.createElement('div');
-        charDiv.className = 'yellow-char';
-        charDiv.textContent = chars[i].toUpperCase();
-        tile.appendChild(charDiv);
-    }
+    const showCursor = document.activeElement === tile;
     
-    // Add a cursor indicator if focused
-    if (document.activeElement === tile && chars.length < 4) {
-        const cursorDiv = document.createElement('div');
-        cursorDiv.className = 'yellow-cursor';
-        cursorDiv.textContent = '|';
-        tile.appendChild(cursorDiv);
+    // Fill grid positions (4 positions total in 2x2 grid)
+    for (let i = 0; i < 4; i++) {
+        const cellDiv = document.createElement('div');
+        
+        if (i < chars.length) {
+            // Position has a character
+            cellDiv.className = 'yellow-char';
+            cellDiv.textContent = chars[i].toUpperCase();
+            
+            // Add cursor class if this is cursor position
+            if (showCursor && i === cursorPos) {
+                cellDiv.classList.add('cursor-here');
+            }
+        } else if (showCursor && i === cursorPos && i === chars.length) {
+            // Empty position with cursor
+            cellDiv.className = 'yellow-cursor';
+            cellDiv.textContent = '|';
+        } else {
+            // Empty position
+            cellDiv.className = 'yellow-char empty';
+        }
+        
+        tile.appendChild(cellDiv);
     }
 }
 
@@ -165,50 +178,51 @@ function setupYellowTileHandlers() {
         
         // Set up initial state
         tile.dataset.chars = '';
-        
-        tile.addEventListener('beforeinput', (event) => {
-            // Prevent default behavior and handle input manually
-            event.preventDefault();
-            
-            const currentChars = tile.dataset.chars || '';
-            
-            if (event.inputType === 'insertText' || event.inputType === 'insertCompositionText') {
-                const newChar = event.data;
-                if (newChar && newChar.match(/[a-zA-Z]/) && currentChars.length < 4) {
-                    // Add new character
-                    tile.dataset.chars = currentChars + newChar.toLowerCase();
-                    updateYellowTileDisplay(i);
-                }
-            } else if (event.inputType === 'deleteContentBackward') {
-                // Remove last character
-                if (currentChars.length > 0) {
-                    tile.dataset.chars = currentChars.slice(0, -1);
-                    updateYellowTileDisplay(i);
-                }
-            } else if (event.inputType === 'deleteContentForward') {
-                // Clear all content
-                tile.dataset.chars = '';
-                updateYellowTileDisplay(i);
-            }
-        });
+        tile.dataset.cursorPos = '0';
         
         tile.addEventListener('keydown', (event) => {
             const currentChars = tile.dataset.chars || '';
+            const cursorPos = parseInt(tile.dataset.cursorPos || '0');
+            
+            event.preventDefault(); // Prevent all default behavior
             
             if (event.key === 'Backspace') {
-                event.preventDefault();
-                if (currentChars.length > 0) {
-                    tile.dataset.chars = currentChars.slice(0, -1);
+                if (cursorPos > 0) {
+                    // Delete character before cursor
+                    const newChars = currentChars.slice(0, cursorPos - 1) + currentChars.slice(cursorPos);
+                    tile.dataset.chars = newChars;
+                    tile.dataset.cursorPos = Math.max(0, cursorPos - 1).toString();
                     updateYellowTileDisplay(i);
                 }
             } else if (event.key === 'Delete') {
-                event.preventDefault();
-                tile.dataset.chars = '';
+                if (cursorPos < currentChars.length) {
+                    // Delete character at cursor
+                    const newChars = currentChars.slice(0, cursorPos) + currentChars.slice(cursorPos + 1);
+                    tile.dataset.chars = newChars;
+                    updateYellowTileDisplay(i);
+                }
+            } else if (event.key === 'ArrowLeft') {
+                // Move cursor left
+                tile.dataset.cursorPos = Math.max(0, cursorPos - 1).toString();
+                updateYellowTileDisplay(i);
+            } else if (event.key === 'ArrowRight') {
+                // Move cursor right
+                tile.dataset.cursorPos = Math.min(currentChars.length, cursorPos + 1).toString();
+                updateYellowTileDisplay(i);
+            } else if (event.key === 'Home') {
+                // Move cursor to start
+                tile.dataset.cursorPos = '0';
+                updateYellowTileDisplay(i);
+            } else if (event.key === 'End') {
+                // Move cursor to end
+                tile.dataset.cursorPos = currentChars.length.toString();
                 updateYellowTileDisplay(i);
             } else if (event.key.length === 1 && event.key.match(/[a-zA-Z]/)) {
-                event.preventDefault();
+                // Insert character at cursor position
                 if (currentChars.length < 4) {
-                    tile.dataset.chars = currentChars + event.key.toLowerCase();
+                    const newChars = currentChars.slice(0, cursorPos) + event.key.toLowerCase() + currentChars.slice(cursorPos);
+                    tile.dataset.chars = newChars;
+                    tile.dataset.cursorPos = (cursorPos + 1).toString();
                     updateYellowTileDisplay(i);
                 }
             }
@@ -216,32 +230,51 @@ function setupYellowTileHandlers() {
         
         tile.addEventListener('paste', (event) => {
             event.preventDefault();
+            const currentChars = tile.dataset.chars || '';
+            const cursorPos = parseInt(tile.dataset.cursorPos || '0');
+            
             const paste = (event.clipboardData || window.clipboardData).getData('text');
-            const cleanPaste = paste.toLowerCase().replace(/[^a-z]/g, '').slice(0, 4);
+            const cleanPaste = paste.toLowerCase().replace(/[^a-z]/g, '');
             
-            tile.dataset.chars = cleanPaste;
+            // Insert pasted text at cursor, respecting 4-character limit
+            const beforeCursor = currentChars.slice(0, cursorPos);
+            const afterCursor = currentChars.slice(cursorPos);
+            const newChars = (beforeCursor + cleanPaste + afterCursor).slice(0, 4);
+            
+            tile.dataset.chars = newChars;
+            tile.dataset.cursorPos = Math.min(cursorPos + cleanPaste.length, newChars.length).toString();
             updateYellowTileDisplay(i);
         });
         
-        // Handle focus to position cursor properly
+        // Handle focus
         tile.addEventListener('focus', () => {
-            // Update display to show cursor
+            // Set cursor to end if not already set
+            const currentChars = tile.dataset.chars || '';
+            if (!tile.dataset.cursorPos) {
+                tile.dataset.cursorPos = currentChars.length.toString();
+            }
             updateYellowTileDisplay(i);
-            
-            // Clear any existing selection and position cursor at end
-            setTimeout(() => {
-                const range = document.createRange();
-                const sel = window.getSelection();
-                range.selectNodeContents(tile);
-                range.collapse(false); // Collapse to end
-                sel.removeAllRanges();
-                sel.addRange(range);
-            }, 0);
         });
         
-        // Handle blur to hide cursor
+        // Handle blur
         tile.addEventListener('blur', () => {
-            // Update display to hide cursor
+            updateYellowTileDisplay(i);
+        });
+        
+        // Handle mouse clicks on character positions
+        tile.addEventListener('click', (event) => {
+            // Calculate which grid position was clicked
+            const rect = tile.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            // Simple grid position calculation (2x2 grid)
+            const col = x < rect.width / 2 ? 0 : 1;
+            const row = y < rect.height / 2 ? 0 : 1;
+            const gridPos = row * 2 + col;
+            
+            const currentChars = tile.dataset.chars || '';
+            tile.dataset.cursorPos = Math.min(gridPos, currentChars.length).toString();
             updateYellowTileDisplay(i);
         });
         
