@@ -108,14 +108,14 @@ function updateYellowTileDisplay(index) {
             // Position has a character
             cellDiv.className = 'yellow-char';
             
-            // If cursor is at this position, show character with cursor
+            // If cursor is right before this character, show cursor then character
             if (showCursor && i === cursorPos) {
-                cellDiv.innerHTML = `${chars[i].toUpperCase()}<span class="inline-cursor">|</span>`;
+                cellDiv.innerHTML = `<span class="inline-cursor">|</span>${chars[i].toUpperCase()}`;
             } else {
                 cellDiv.textContent = chars[i].toUpperCase();
             }
         } else if (showCursor && i === cursorPos) {
-            // Empty position with cursor
+            // Empty position with cursor (cursor at end)
             cellDiv.className = 'yellow-cursor';
             cellDiv.textContent = '|';
         } else {
