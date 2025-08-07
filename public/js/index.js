@@ -202,13 +202,28 @@ function setupYellowTileHandlers() {
                     updateYellowTileDisplay(i);
                 }
             } else if (event.key === 'ArrowLeft') {
-                // Move cursor left
-                tile.dataset.cursorPos = Math.max(0, cursorPos - 1).toString();
-                updateYellowTileDisplay(i);
+                // Move cursor left or to previous tile
+                if (cursorPos > 0) {
+                    tile.dataset.cursorPos = Math.max(0, cursorPos - 1).toString();
+                    updateYellowTileDisplay(i);
+                } else if (i > 0) {
+                    // Move to previous yellow tile
+                    const prevTile = document.getElementById(`yellow${i - 1}`);
+                    const prevChars = prevTile.dataset.chars || '';
+                    prevTile.dataset.cursorPos = prevChars.length.toString();
+                    prevTile.focus();
+                }
             } else if (event.key === 'ArrowRight') {
-                // Move cursor right
-                tile.dataset.cursorPos = Math.min(currentChars.length, cursorPos + 1).toString();
-                updateYellowTileDisplay(i);
+                // Move cursor right or to next tile
+                if (cursorPos < currentChars.length) {
+                    tile.dataset.cursorPos = Math.min(currentChars.length, cursorPos + 1).toString();
+                    updateYellowTileDisplay(i);
+                } else if (i < 4) {
+                    // Move to next yellow tile
+                    const nextTile = document.getElementById(`yellow${i + 1}`);
+                    nextTile.dataset.cursorPos = '0';
+                    nextTile.focus();
+                }
             } else if (event.key === 'Home') {
                 // Move cursor to start
                 tile.dataset.cursorPos = '0';
@@ -217,6 +232,32 @@ function setupYellowTileHandlers() {
                 // Move cursor to end
                 tile.dataset.cursorPos = currentChars.length.toString();
                 updateYellowTileDisplay(i);
+            } else if (event.key === 'Tab') {
+                // Handle Tab navigation between tiles
+                if (event.shiftKey) {
+                    // Shift+Tab - go to previous tile
+                    if (i > 0) {
+                        const prevTile = document.getElementById(`yellow${i - 1}`);
+                        const prevChars = prevTile.dataset.chars || '';
+                        prevTile.dataset.cursorPos = prevChars.length.toString();
+                        prevTile.focus();
+                    } else {
+                        // Allow default tab behavior to move to previous focusable element
+                        event.preventDefault = false;
+                        return;
+                    }
+                } else {
+                    // Tab - go to next tile
+                    if (i < 4) {
+                        const nextTile = document.getElementById(`yellow${i + 1}`);
+                        nextTile.dataset.cursorPos = '0';
+                        nextTile.focus();
+                    } else {
+                        // Allow default tab behavior to move to next focusable element
+                        event.preventDefault = false;
+                        return;
+                    }
+                }
             } else if (event.key.length === 1 && event.key.match(/[a-zA-Z]/)) {
                 // Insert character at cursor position
                 if (currentChars.length < 4) {
