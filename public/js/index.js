@@ -84,6 +84,13 @@ function searchWords() {
 
 // Get characters from yellow tile
 function getYellowTileChars(index) {
+    // Try to get from hidden input first (mobile-friendly)
+    const input = document.getElementById(`yellowInput${index}`);
+    if (input && input.value) {
+        return input.value.toLowerCase().replace(/[^a-z]/g, '');
+    }
+    
+    // Fallback to dataset for desktop
     const tile = document.getElementById(`yellow${index}`);
     return tile.dataset.chars || '';
 }
@@ -175,10 +182,51 @@ function setupTileHandlers() {
 function setupYellowTileHandlers() {
     for (let i = 0; i < 5; i++) {
         const tile = document.getElementById(`yellow${i}`);
+        const input = document.getElementById(`yellowInput${i}`);
         
         // Set up initial state
         tile.dataset.chars = '';
         tile.dataset.cursorPos = '0';
+        
+        // Mobile input handler
+        if (input) {
+            input.addEventListener('input', (event) => {
+                const value = event.target.value.toLowerCase().replace(/[^a-z]/g, '').slice(0, 4);
+                event.target.value = value;
+                
+                // Sync with visual tile
+                tile.dataset.chars = value;
+                tile.dataset.cursorPos = value.length.toString();
+                updateYellowTileDisplay(i);
+            });
+            
+            input.addEventListener('focus', () => {
+                // Focus the visual tile too for consistent styling
+                tile.focus();
+            });
+            
+            // When visual tile is clicked, focus the hidden input (for mobile)
+            tile.addEventListener('click', (event) => {
+                if (window.innerWidth <= 768) { // Mobile breakpoint
+                    event.preventDefault();
+                    input.focus();
+                    return;
+                }
+                
+                // Desktop click handling (existing code)
+                const rect = tile.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+                
+                const col = x < rect.width / 2 ? 0 : 1;
+                const row = y < rect.height / 2 ? 0 : 1;
+                const gridPos = row * 2 + col;
+                
+                const currentChars = tile.dataset.chars || '';
+                tile.dataset.cursorPos = Math.min(gridPos, currentChars.length).toString();
+                updateYellowTileDisplay(i);
+            });
+        }
         
         tile.addEventListener('keydown', (event) => {
             const currentChars = tile.dataset.chars || '';
@@ -264,6 +312,10 @@ function setupYellowTileHandlers() {
                     const newChars = currentChars.slice(0, cursorPos) + event.key.toLowerCase() + currentChars.slice(cursorPos);
                     tile.dataset.chars = newChars;
                     tile.dataset.cursorPos = (cursorPos + 1).toString();
+                    // Sync with hidden input
+                    if (input) {
+                        input.value = newChars;
+                    }
                     updateYellowTileDisplay(i);
                 }
             }
@@ -302,22 +354,6 @@ function setupYellowTileHandlers() {
             updateYellowTileDisplay(i);
         });
         
-        // Handle mouse clicks on character positions
-        tile.addEventListener('click', (event) => {
-            // Calculate which grid position was clicked
-            const rect = tile.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-            
-            // Simple grid position calculation (2x2 grid)
-            const col = x < rect.width / 2 ? 0 : 1;
-            const row = y < rect.height / 2 ? 0 : 1;
-            const gridPos = row * 2 + col;
-            
-            const currentChars = tile.dataset.chars || '';
-            tile.dataset.cursorPos = Math.min(gridPos, currentChars.length).toString();
-            updateYellowTileDisplay(i);
-        });
         
         // Initialize display
         updateYellowTileDisplay(i);
