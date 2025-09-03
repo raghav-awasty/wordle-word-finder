@@ -162,8 +162,9 @@ input {
     padding: 0.5rem 1rem;
     background-color: #3a3a3c;
     border-radius: 4px;
-    font-family: 'Inter', monospace;
+    font-family: 'Inter', sans-serif;
     font-size: 1rem;
+    font-weight: 600;
 }
 
 @media (max-width: 480px) {
