@@ -69,6 +69,16 @@ input {
     appearance: none;
     outline: none;
     pointer-events: all;
+    /* Enhanced mobile support */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    border-radius: inherit;
+    padding: 0;
+    margin: 0;
+    /* Force mobile keyboard on iOS/Android */
+    -webkit-tap-highlight-color: transparent;
 }
 
 .yellow-tile {
@@ -182,5 +192,41 @@ input {
     .yellow-char{
         min-height: 1rem;
         font-size: 0.9rem;
+    }
+    
+    /* Enhanced mobile keyboard triggering */
+    .yellow-hidden-input {
+        /* Make sure hidden input is accessible on mobile */
+        -webkit-user-select: text;
+        -moz-user-select: text;
+        user-select: text;
+        /* Ensure input is focusable */
+        pointer-events: all;
+    }
+    
+    /* Mobile focus indicators */
+    .yellow-tile-container:focus-within .yellow-tile {
+        border-color: #ffffff !important;
+        box-shadow: 0 0 0 2px #ffffff, 0 0 12px rgba(255, 255, 255, 0.5) !important;
+        transform: scale(1.08) !important;
+    }
+    
+    .yellow-hidden-input:focus + .yellow-tile {
+        border-color: #ffffff !important;
+        box-shadow: 0 0 0 2px #ffffff, 0 0 12px rgba(255, 255, 255, 0.5) !important;
+        transform: scale(1.08) !important;
+    }
+    
+    /* Enhanced mobile cursor visibility */
+    .yellow-cursor {
+        color: #ffffff !important;
+        font-size: 1.5rem !important;
+        font-weight: bold;
+    }
+    
+    .inline-cursor {
+        color: #ffffff !important;
+        font-size: 1.5rem !important;
+        font-weight: bold;
     }
 }

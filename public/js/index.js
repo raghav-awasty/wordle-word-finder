@@ -98,14 +98,17 @@ function getYellowTileChars(index) {
 // Update yellow tile display
 function updateYellowTileDisplay(index) {
     const tile = document.getElementById(`yellow${index}`);
+    const input = document.getElementById(`yellowInput${index}`);
     const chars = tile.dataset.chars || '';
     const cursorPos = parseInt(tile.dataset.cursorPos || '0');
+    const isMobile = isMobileDevice();
     
     // Clear the tile
     tile.innerHTML = '';
     
     // Create grid structure with cursor support
-    const showCursor = document.activeElement === tile;
+    // On mobile, show cursor if hidden input is focused; on desktop, show if tile is focused
+    const showCursor = isMobile ? (input && document.activeElement === input) : (document.activeElement === tile);
     
     // Fill grid positions (4 positions total in 2x2 grid)
     for (let i = 0; i < 4; i++) {
@@ -178,8 +181,17 @@ function setupTileHandlers() {
     });
 }
 
+// Utility function to detect mobile devices
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+           ('ontouchstart' in window) || 
+           (window.innerWidth <= 768 && window.innerHeight <= 1024);
+}
+
 // Handle yellow tile input and display
 function setupYellowTileHandlers() {
+    const isMobile = isMobileDevice();
+    
     for (let i = 0; i < 5; i++) {
         const tile = document.getElementById(`yellow${i}`);
         const input = document.getElementById(`yellowInput${i}`);
@@ -202,18 +214,32 @@ function setupYellowTileHandlers() {
             
             input.addEventListener('focus', () => {
                 // Focus the visual tile too for consistent styling
-                tile.focus();
+                if (!isMobile) {
+                    tile.focus();
+                }
+                updateYellowTileDisplay(i);
             });
             
-            // When visual tile is clicked, focus the hidden input (for mobile)
+            input.addEventListener('blur', () => {
+                updateYellowTileDisplay(i);
+            });
+        }
+        
+        // Mobile-first touch handling
+        if (isMobile && input) {
+            // For mobile: prioritize hidden input
+            tile.addEventListener('touchstart', (event) => {
+                event.preventDefault();
+                input.focus();
+            }, { passive: false });
+            
             tile.addEventListener('click', (event) => {
-                if (window.innerWidth <= 768) { // Mobile breakpoint
-                    event.preventDefault();
-                    input.focus();
-                    return;
-                }
-                
-                // Desktop click handling (existing code)
+                event.preventDefault();
+                input.focus();
+            });
+        } else {
+            // Desktop click handling with advanced cursor positioning
+            tile.addEventListener('click', (event) => {
                 const rect = tile.getBoundingClientRect();
                 const x = event.clientX - rect.left;
                 const y = event.clientY - rect.top;
