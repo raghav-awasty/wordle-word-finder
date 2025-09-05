@@ -1,14 +1,44 @@
 // Index page specific functionality
 
-let validWords = [];
+let validWordsWithFrequency = [];
 
-// Load valid words data
+// Load valid words data from CSV with frequencies
 async function loadWords() {
     try {
-        validWords = await DataLoader.loadJSON('data/valid_words.json');
+        const csvText = await DataLoader.loadText('data/valid_words_frequencies.csv');
+        validWordsWithFrequency = parseCsvToWordsFrequencies(csvText);
+        console.log(`Loaded ${validWordsWithFrequency.length} words with frequencies`);
     } catch (error) {
-        console.error('Failed to load valid words:', error);
+        console.error('Failed to load valid words with frequencies:', error);
+        // Fallback to JSON if CSV fails
+        try {
+            const words = await DataLoader.loadJSON('data/valid_words.json');
+            validWordsWithFrequency = words.map(word => ({ word, frequency: 0 }));
+            console.log(`Fallback: Loaded ${validWordsWithFrequency.length} words without frequencies`);
+        } catch (fallbackError) {
+            console.error('Failed to load fallback word list:', fallbackError);
+        }
     }
+}
+
+// Parse CSV text into array of {word, frequency} objects
+function parseCsvToWordsFrequencies(csvText) {
+    const lines = csvText.trim().split('\n');
+    const wordsWithFreq = [];
+    
+    for (const line of lines) {
+        const [word, frequencyStr] = line.split(',');
+        if (word && frequencyStr) {
+            const frequency = parseFloat(frequencyStr);
+            wordsWithFreq.push({ 
+                word: word.toLowerCase().trim(), 
+                frequency: frequency || 0 
+            });
+        }
+    }
+    
+    // Sort by frequency (highest first)
+    return wordsWithFreq.sort((a, b) => b.frequency - a.frequency);
 }
 
 // Main search function
@@ -35,7 +65,9 @@ function searchWords() {
         }
     }
 
-    const results = validWords.filter(word => {
+    const results = validWordsWithFrequency.filter(wordObj => {
+        const word = wordObj.word;
+        
         // Check green-tile matches (fixed positions)
         for (let i = 0; i < 5; i++) {
             if (greenPositions[i] && word[i] !== greenPositions[i]) {
@@ -141,10 +173,113 @@ function updateYellowTileDisplay(index) {
 function displayResults(results) {
     const resultsContainer = document.getElementById('results');
     if (results.length === 0) {
-        resultsContainer.innerText = 'No matching words found.';
+        resultsContainer.innerHTML = '<div class="no-results">No matching words found.</div>';
     } else {
-        resultsContainer.innerHTML = results.map(word => `<span class="word">${word}</span>`).join('');
+        // Calculate frequency statistics for visualization
+        const maxFreq = Math.max(...results.map(w => w.frequency));
+        const minFreq = Math.min(...results.map(w => w.frequency));
+        const avgFreq = results.reduce((sum, w) => sum + w.frequency, 0) / results.length;
+        
+        // Create frequency distribution data
+        const distribution = createFrequencyDistribution(results, maxFreq, minFreq);
+        
+        // Add results header with frequency stats and mini chart
+        const resultsHeader = `<div class="results-header">
+            <div class="results-info">
+                <span class="results-count">${results.length} word${results.length !== 1 ? 's' : ''} found</span>
+                <span class="results-sort">• sorted by frequency</span>
+            </div>
+            <div class="frequency-stats">
+                <div class="frequency-legend">
+                    <span class="legend-item"><span class="legend-color high"></span>High (${distribution.high})</span>
+                    <span class="legend-item"><span class="legend-color medium"></span>Medium (${distribution.medium})</span>
+                    <span class="legend-item"><span class="legend-color low"></span>Low (${distribution.low})</span>
+                </div>
+                <div class="frequency-distribution">
+                    ${createDistributionBars(distribution, results.length)}
+                </div>
+            </div>
+        </div>`;
+        
+        // Results are already sorted by frequency (highest first) from the filter
+        const resultsHtml = results
+            .map((wordObj, index) => {
+                const frequencyPercent = maxFreq > 0 ? (wordObj.frequency / maxFreq) * 100 : 0;
+                const frequencyTier = getFrequencyTier(wordObj.frequency, maxFreq, minFreq);
+                const rank = index + 1;
+                
+                const rankDisplay = rank <= 10 ? `<span class="rank">#${rank}</span>` : '';
+                const frequencyDisplay = wordObj.frequency > 0 
+                    ? `<span class="frequency">${wordObj.frequency.toFixed(1)}</span>`
+                    : '';
+                    
+                const relativeFreqText = getRelativeFrequencyText(wordObj.frequency, avgFreq);
+                const tooltip = `Frequency: ${wordObj.frequency.toFixed(1)} (${relativeFreqText})`;
+                
+                return `<div class="word ${frequencyTier}" title="${tooltip}">
+                    <div class="word-content">
+                        ${rankDisplay}
+                        <span class="word-text">${wordObj.word.toUpperCase()}</span>
+                        ${frequencyDisplay}
+                    </div>
+                    <div class="frequency-bar" style="width: ${frequencyPercent}%"></div>
+                </div>`;
+            })
+            .join('');
+            
+        resultsContainer.innerHTML = resultsHeader + '<div class="results-grid">' + resultsHtml + '</div>';
     }
+}
+
+// Determine frequency tier for color coding
+function getFrequencyTier(frequency, maxFreq, minFreq) {
+    const range = maxFreq - minFreq;
+    const highThreshold = minFreq + (range * 0.7);
+    const mediumThreshold = minFreq + (range * 0.3);
+    
+    if (frequency >= highThreshold) return 'high-freq';
+    if (frequency >= mediumThreshold) return 'medium-freq';
+    return 'low-freq';
+}
+
+// Get relative frequency description
+function getRelativeFrequencyText(frequency, avgFreq) {
+    const ratio = frequency / avgFreq;
+    if (ratio > 2) return 'much more common than average';
+    if (ratio > 1.5) return 'more common than average';
+    if (ratio > 0.7) return 'about average';
+    if (ratio > 0.3) return 'less common than average';
+    return 'much less common than average';
+}
+
+// Create frequency distribution data
+function createFrequencyDistribution(results, maxFreq, minFreq) {
+    const range = maxFreq - minFreq;
+    const highThreshold = minFreq + (range * 0.7);
+    const mediumThreshold = minFreq + (range * 0.3);
+    
+    let high = 0, medium = 0, low = 0;
+    
+    results.forEach(wordObj => {
+        if (wordObj.frequency >= highThreshold) high++;
+        else if (wordObj.frequency >= mediumThreshold) medium++;
+        else low++;
+    });
+    
+    return { high, medium, low };
+}
+
+// Create mini distribution bar chart
+function createDistributionBars(distribution, total) {
+    const highPercent = (distribution.high / total) * 100;
+    const mediumPercent = (distribution.medium / total) * 100;
+    const lowPercent = (distribution.low / total) * 100;
+    
+    return `
+        <div class="distribution-bar high" style="width: ${highPercent}%" title="${distribution.high} high-frequency words (${highPercent.toFixed(1)}%)"></div>
+        <div class="distribution-bar medium" style="width: ${mediumPercent}%" title="${distribution.medium} medium-frequency words (${mediumPercent.toFixed(1)}%)"></div>
+        <div class="distribution-bar low" style="width: ${lowPercent}%" title="${distribution.low} low-frequency words (${lowPercent.toFixed(1)}%)"></div>
+    `;
 }
 
 // Handle tile navigation and input
