@@ -76,7 +76,20 @@ const DataLoader = {
             }
             return await response.json();
         } catch (error) {
-            console.error('Error loading data:', error);
+            console.error('Error loading JSON data:', error);
+            throw error;
+        }
+    },
+    
+    loadText: async function(url) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Failed to load ${url}`);
+            }
+            return await response.text();
+        } catch (error) {
+            console.error('Error loading text data:', error);
             throw error;
         }
     }

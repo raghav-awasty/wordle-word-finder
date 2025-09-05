@@ -158,13 +158,31 @@ input {
 }
 
 .word {
-    display: inline-block;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
     padding: 0.5rem 1rem;
     background-color: #3a3a3c;
     border-radius: 4px;
     font-family: 'Inter', sans-serif;
     font-size: 1rem;
     font-weight: 600;
+    position: relative;
+    margin-bottom: 0.25rem;
+}
+
+.word-text {
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 0.1rem;
+}
+
+.frequency {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: #b59f3b;
+    opacity: 0.8;
 }
 
 @media (max-width: 480px) {

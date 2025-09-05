@@ -1,14 +1,44 @@
 // Index page specific functionality
 
-let validWords = [];
+let validWordsWithFrequency = [];
 
-// Load valid words data
+// Load valid words data from CSV with frequencies
 async function loadWords() {
     try {
-        validWords = await DataLoader.loadJSON('data/valid_words.json');
+        const csvText = await DataLoader.loadText('data/valid_words_frequencies.csv');
+        validWordsWithFrequency = parseCsvToWordsFrequencies(csvText);
+        console.log(`Loaded ${validWordsWithFrequency.length} words with frequencies`);
     } catch (error) {
-        console.error('Failed to load valid words:', error);
+        console.error('Failed to load valid words with frequencies:', error);
+        // Fallback to JSON if CSV fails
+        try {
+            const words = await DataLoader.loadJSON('data/valid_words.json');
+            validWordsWithFrequency = words.map(word => ({ word, frequency: 0 }));
+            console.log(`Fallback: Loaded ${validWordsWithFrequency.length} words without frequencies`);
+        } catch (fallbackError) {
+            console.error('Failed to load fallback word list:', fallbackError);
+        }
     }
+}
+
+// Parse CSV text into array of {word, frequency} objects
+function parseCsvToWordsFrequencies(csvText) {
+    const lines = csvText.trim().split('\n');
+    const wordsWithFreq = [];
+    
+    for (const line of lines) {
+        const [word, frequencyStr] = line.split(',');
+        if (word && frequencyStr) {
+            const frequency = parseFloat(frequencyStr);
+            wordsWithFreq.push({ 
+                word: word.toLowerCase().trim(), 
+                frequency: frequency || 0 
+            });
+        }
+    }
+    
+    // Sort by frequency (highest first)
+    return wordsWithFreq.sort((a, b) => b.frequency - a.frequency);
 }
 
 // Main search function
@@ -35,7 +65,9 @@ function searchWords() {
         }
     }
 
-    const results = validWords.filter(word => {
+    const results = validWordsWithFrequency.filter(wordObj => {
+        const word = wordObj.word;
+        
         // Check green-tile matches (fixed positions)
         for (let i = 0; i < 5; i++) {
             if (greenPositions[i] && word[i] !== greenPositions[i]) {
@@ -143,7 +175,18 @@ function displayResults(results) {
     if (results.length === 0) {
         resultsContainer.innerText = 'No matching words found.';
     } else {
-        resultsContainer.innerHTML = results.map(word => `<span class="word">${word}</span>`).join('');
+        // Results are already sorted by frequency (highest first) from the filter
+        resultsContainer.innerHTML = results
+            .map(wordObj => {
+                const frequencyDisplay = wordObj.frequency > 0 
+                    ? `<span class="frequency">${wordObj.frequency.toFixed(1)}</span>`
+                    : '';
+                return `<span class="word" title="Frequency: ${wordObj.frequency.toFixed(1)}">
+                    <span class="word-text">${wordObj.word.toUpperCase()}</span>
+                    ${frequencyDisplay}
+                </span>`;
+            })
+            .join('');
     }
 }
 
