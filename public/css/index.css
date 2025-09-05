@@ -151,10 +151,40 @@ input {
     min-height: 50px;
     text-align: center;
     white-space: pre-wrap;
+}
+
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #3a3a3c;
+    color: #d7dadc;
+    font-size: 0.9rem;
+}
+
+.results-count {
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.results-sort {
+    font-size: 0.8rem;
+    color: #b59f3b;
+    opacity: 0.8;
+}
+
+.results-grid {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 0.5rem;
+}
+
+.no-results {
+    color: #d7dadc;
+    font-style: italic;
 }
 
 .word {
@@ -247,5 +277,25 @@ input {
         color: #ffffff !important;
         font-size: 1.5rem !important;
         font-weight: bold;
+    }
+    
+    /* Mobile results layout */
+    .results-header {
+        flex-direction: column;
+        gap: 0.25rem;
+        text-align: center;
+    }
+    
+    .word {
+        padding: 0.4rem 0.8rem;
+        margin-bottom: 0.2rem;
+    }
+    
+    .word-text {
+        font-size: 0.9rem;
+    }
+    
+    .frequency {
+        font-size: 0.65rem;
     }
 }

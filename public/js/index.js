@@ -173,10 +173,16 @@ function updateYellowTileDisplay(index) {
 function displayResults(results) {
     const resultsContainer = document.getElementById('results');
     if (results.length === 0) {
-        resultsContainer.innerText = 'No matching words found.';
+        resultsContainer.innerHTML = '<div class="no-results">No matching words found.</div>';
     } else {
+        // Add results header
+        const resultsHeader = `<div class="results-header">
+            <span class="results-count">${results.length} word${results.length !== 1 ? 's' : ''} found</span>
+            <span class="results-sort">• sorted by frequency</span>
+        </div>`;
+        
         // Results are already sorted by frequency (highest first) from the filter
-        resultsContainer.innerHTML = results
+        const resultsHtml = results
             .map(wordObj => {
                 const frequencyDisplay = wordObj.frequency > 0 
                     ? `<span class="frequency">${wordObj.frequency.toFixed(1)}</span>`
@@ -187,6 +193,8 @@ function displayResults(results) {
                 </span>`;
             })
             .join('');
+            
+        resultsContainer.innerHTML = resultsHeader + '<div class="results-grid">' + resultsHtml + '</div>';
     }
 }
 
