@@ -158,21 +158,100 @@ input {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
+    padding-bottom: 0.75rem;
     border-bottom: 1px solid #3a3a3c;
     color: #d7dadc;
     font-size: 0.9rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.results-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
 }
 
 .results-count {
     font-weight: 600;
     color: #ffffff;
+    font-size: 1rem;
 }
 
 .results-sort {
     font-size: 0.8rem;
     color: #b59f3b;
     opacity: 0.8;
+}
+
+.frequency-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-end;
+}
+
+.frequency-legend {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.frequency-distribution {
+    display: flex;
+    width: 120px;
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    background-color: #2a2a2a;
+}
+
+.distribution-bar {
+    height: 100%;
+    cursor: help;
+    transition: opacity 0.2s ease;
+}
+
+.distribution-bar:hover {
+    opacity: 0.8;
+}
+
+.distribution-bar.high {
+    background-color: #6aaa64;
+}
+
+.distribution-bar.medium {
+    background-color: #b59f3b;
+}
+
+.distribution-bar.low {
+    background-color: #818384;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: #d7dadc;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.legend-color.high {
+    background: linear-gradient(135deg, #6aaa64, #538d4e);
+}
+
+.legend-color.medium {
+    background: linear-gradient(135deg, #b59f3b, #9d8629);
+}
+
+.legend-color.low {
+    background: linear-gradient(135deg, #818384, #656565);
 }
 
 .results-grid {
@@ -188,31 +267,102 @@ input {
 }
 
 .word {
-    display: inline-flex;
+    display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 0.5rem 1rem;
+    position: relative;
+    padding: 0;
     background-color: #3a3a3c;
-    border-radius: 4px;
+    border-radius: 6px;
     font-family: 'Inter', sans-serif;
     font-size: 1rem;
     font-weight: 600;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    cursor: default;
+    border: 2px solid transparent;
+}
+
+.word:hover {
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.word-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.8rem;
+    z-index: 2;
     position: relative;
-    margin-bottom: 0.25rem;
+    gap: 0.5rem;
 }
 
 .word-text {
     font-size: 1rem;
     font-weight: 600;
     color: white;
-    margin-bottom: 0.1rem;
+    flex-grow: 1;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+
+.rank {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #FFD700;
+    background: rgba(255, 215, 0, 0.15);
+    padding: 0.15rem 0.4rem;
+    border-radius: 8px;
+    min-width: fit-content;
 }
 
 .frequency {
     font-size: 0.7rem;
-    font-weight: 400;
-    color: #b59f3b;
-    opacity: 0.8;
+    font-weight: 500;
+    color: #d7dadc;
+    opacity: 0.9;
+    min-width: fit-content;
+}
+
+.frequency-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent 0%, var(--freq-color) 100%);
+    transition: width 0.3s ease;
+    z-index: 1;
+}
+
+/* Frequency tier styling */
+.word.high-freq {
+    background: linear-gradient(135deg, #3a4a3d, #3a3a3c);
+    --freq-color: #6aaa64;
+}
+
+.word.high-freq .frequency-bar {
+    background: linear-gradient(90deg, transparent 0%, #6aaa64 100%);
+    height: 4px;
+}
+
+.word.medium-freq {
+    background: linear-gradient(135deg, #4a4439, #3a3a3c);
+    --freq-color: #b59f3b;
+}
+
+.word.medium-freq .frequency-bar {
+    background: linear-gradient(90deg, transparent 0%, #b59f3b 100%);
+}
+
+.word.low-freq {
+    background: linear-gradient(135deg, #404040, #3a3a3c);
+    --freq-color: #818384;
+}
+
+.word.low-freq .frequency-bar {
+    background: linear-gradient(90deg, transparent 0%, #818384 100%);
 }
 
 @media (max-width: 480px) {
@@ -282,20 +432,62 @@ input {
     /* Mobile results layout */
     .results-header {
         flex-direction: column;
-        gap: 0.25rem;
+        gap: 0.5rem;
         text-align: center;
     }
     
+    .results-info {
+        align-items: center;
+    }
+    
+    .frequency-stats {
+        align-items: center;
+        width: 100%;
+    }
+    
+    .frequency-legend {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    
+    .frequency-distribution {
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .legend-item {
+        font-size: 0.7rem;
+    }
+    
     .word {
-        padding: 0.4rem 0.8rem;
-        margin-bottom: 0.2rem;
+        margin-bottom: 0.4rem;
+    }
+    
+    .word-content {
+        padding: 0.5rem 0.7rem;
+        gap: 0.4rem;
     }
     
     .word-text {
         font-size: 0.9rem;
+        letter-spacing: 0.3px;
+    }
+    
+    .rank {
+        font-size: 0.65rem;
+        padding: 0.1rem 0.3rem;
     }
     
     .frequency {
         font-size: 0.65rem;
+    }
+    
+    .frequency-bar {
+        height: 2px;
+    }
+    
+    .word.high-freq .frequency-bar {
+        height: 3px;
     }
 }
