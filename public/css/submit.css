@@ -55,3 +55,24 @@ button:hover {
     color: #cf222e;
     font-size: 0.9em;
 }
+
+.info-box {
+    background-color: #e6f3ff;
+    border: 1px solid #b3d9ff;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1.25rem;
+    color: #1a1a1a;
+}
+
+.info-box p {
+    margin: 0.5rem 0;
+}
+
+.info-box p:first-child {
+    margin-top: 0;
+}
+
+.info-box p:last-child {
+    margin-bottom: 0;
+}

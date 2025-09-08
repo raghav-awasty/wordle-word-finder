@@ -1,0 +1,77 @@
+name: Process Word Submission
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  process_submission:
+    runs-on: ubuntu-latest
+    if: startsWith(github.event.issue.title, 'WOTD:')
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Extract word from issue title
+        id: extract_word
+        run: |
+          TITLE="${{ github.event.issue.title }}"
+          WORD=$(echo "$TITLE" | sed 's/WOTD: *//' | tr '[:lower:]' '[:upper:]')
+          echo "word=$WORD" >> $GITHUB_OUTPUT
+          echo "Extracted word: $WORD"
+
+      - name: Run the update script
+        env:
+          WORD_TO_ADD: ${{ steps.extract_word.outputs.word }}
+        run: python ./scripts/update_word_otd.py
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'Raghav Awasty'
+          git config --global user.email 'raghav.awasty@gmail.com'
+          git add data/word_otd.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Set Word of the Day: ${{ steps.extract_word.outputs.word }}"
+            git push
+          fi
+
+      - name: Close issue on success
+        if: success()
+        run: |
+          curl -X PATCH \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }} \
+            -d '{"state":"closed","labels":["completed"]}'
+
+      - name: Comment on issue with result
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            COMMENT="✅ Successfully added **${{ steps.extract_word.outputs.word }}** as Word of the Day!"
+          else
+            COMMENT="❌ Failed to process word submission. Please check the workflow logs."
+          fi
+          
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments \
+            -d "{\"body\":\"$COMMENT\"}"

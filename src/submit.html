@@ -18,15 +18,13 @@
     <label for="word">Today's 5-Letter Word:</label>
     <input type="text" id="word" name="word" maxlength="5" pattern="[a-zA-Z]{5}" required>
 
-    <label for="pat">GitHub Personal Access Token (PAT):</label>
-    <input type="password" id="pat" name="pat" required>
-    <p class="warning">
-        Your PAT is used to authorize the request and is NOT stored.
-        Create a <a href="https://github.com/settings/tokens/new?scopes=repo&description=Wordle%20Workflow%20Trigger"
-            target="_blank" rel="noopener">new token with 'repo' scope.</a>
-    </p>
+    <div class="info-box">
+        <p><strong>How it works:</strong></p>
+        <p>This creates a GitHub issue to trigger the word processing workflow. No PAT required!</p>
+        <p>If you're not logged into GitHub, you'll get a link to create the issue manually.</p>
+    </div>
 
-    <button onclick="triggerWorkflow()">Submit Word</button>
+    <button onclick="submitWordViaIssue()">Submit Word</button>
 
     <div id="status"></div>
 
