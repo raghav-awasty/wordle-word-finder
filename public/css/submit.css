@@ -40,7 +40,7 @@ button {
     width: 100%;
     margin: 1.25rem auto 2rem auto;
     padding: 0.75rem 2rem;
-    background-color: #818384;
+    background-color: #b59f3b;
     border: none;
     color: white;
     font-size: 1.1rem;
@@ -52,7 +52,12 @@ button {
 }
 
 button:hover {
-    background-color: #b59f3b;
+    background-color: #538d4e;
+}
+
+button:active {
+    background-color: #6aaa64;
+    transform: translateY(1px);
 }
 
 #status {
