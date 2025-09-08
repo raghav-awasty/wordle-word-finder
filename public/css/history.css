@@ -284,6 +284,7 @@ body {
     border: none;
     color: #818384;
     font-size: 1.5rem;
+    font-family: 'Inter', sans-serif;
     cursor: pointer;
     padding: 0;
     line-height: 1;
