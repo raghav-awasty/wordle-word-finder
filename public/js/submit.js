@@ -10,7 +10,7 @@ function submitWordViaIssue() {
 
     // Create pre-filled GitHub issue URL and open it directly
     const issueTitle = `WOTD: ${word}`;
-    const issueBody = `Automated submission for Word of the Day: **${word}**\n\nSubmitted on: ${new Date().toLocaleDateString()}\n\n*.*`;
+    const issueBody = `Automated submission for Word of the Day: **${word}**\n\nSubmitted on: ${new Date().toLocaleDateString()}`;
     
     const issueUrl = `https://github.com/${GITHUB_USERNAME}/${GITHUB_REPO}/issues/new?` +
         `title=${encodeURIComponent(issueTitle)}&` +
