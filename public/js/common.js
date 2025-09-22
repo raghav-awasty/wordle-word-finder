@@ -3,7 +3,6 @@
 // Common constants
 const GITHUB_USERNAME = "raghav-awasty";
 const GITHUB_REPO = "wordle-word-finder";
-const WORKFLOW_FILE_NAME = "update_word_otd.yml";
 const GIT_BRANCH = "main";
 
 // Utility function to create DOM elements
