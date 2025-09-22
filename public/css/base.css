@@ -1,5 +1,24 @@
 /* Base Styles - Common across all pages */
 
+/* CSS Custom Properties (Variables) */
+:root {
+    --primary-green: #538d4e;
+    --primary-green-light: #6aaa64;
+    --primary-yellow: #b59f3b;
+    --border-gray: #3a3a3c;
+    --text-gray: #d7dadc;
+    --bg-dark: #121213;
+    --bg-secondary: #272729;
+    --bg-input: #202124;
+    --border-radius: 8px;
+    --border-radius-small: 6px;
+    --border-radius-tiny: 3px;
+    --border-radius-minimal: 2px;
+    --white: #ffffff;
+    --gray-light: #818384;
+    --bg-other: #1a1a1b;
+}
+
 /* Reset and base styling */
 *, *:before, *:after {
     -webkit-box-sizing: border-box;
@@ -9,8 +28,8 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    background-color: #121213;
-    color: #ffffff;
+    background-color: var(--bg-dark);
+    color: var(--white);
     margin: auto;
     text-align: center;
     -webkit-touch-callout: none;
@@ -30,7 +49,7 @@ h1 {
 p {
     margin-bottom: 1rem;
     font-size: 1.1rem;
-    color: #d7dadc;
+    color: var(--text-gray);
 }
 
 /* Form Elements */
@@ -38,22 +57,22 @@ label {
     display: block;
     margin-bottom: 0.5rem;
     font-size: 1.1rem;
-    color: #d7dadc;
+    color: var(--text-gray);
 }
 
 input {
     padding: 0.75rem 1rem;
     font-size: 1rem;
-    border: 2px solid #3a3a3c;
-    background-color: #202124;
-    color: white;
-    border-radius: 8px;
+    border: 2px solid var(--border-gray);
+    background-color: var(--bg-input);
+    color: var(--white);
+    border-radius: var(--border-radius);
     box-sizing: border-box;
     transition: border-color 0.3s;
 }
 
 input:focus {
-    border-color: #3a3a3c;
+    border-color: var(--border-gray);
     outline: none;
 }
 
@@ -61,18 +80,18 @@ button {
     display: inline-block;
     margin: 1rem auto 2rem auto;
     padding: 0.75rem 2rem;
-    background-color: #818384;
+    background-color: var(--gray-light);
     border: none;
-    color: white;
+    color: var(--white);
     font-size: 1.1rem;
-    border-radius: 8px;
+    border-radius: var(--border-radius);
     cursor: pointer;
     font-weight: 600;
     transition: background-color 0.3s, transform 0.2s;
 }
 
 button:hover {
-    background-color: #b59f3b;
+    background-color: var(--primary-yellow);
 }
 
 /* Navigation */
@@ -84,23 +103,23 @@ button:hover {
 }
 
 .nav-buttons a {
-    background-color: #538d4e;
-    color: white;
+    background-color: var(--primary-green);
+    color: var(--white);
     padding: 0.5rem 1rem;
-    border-radius: 6px;
+    border-radius: var(--border-radius-small);
     text-decoration: none;
     font-weight: 600;
     font-size: 1rem;
 }
 
 .nav-buttons a:hover {
-    background-color: #6aaa64;
+    background-color: var(--primary-green-light);
     text-decoration: none;
 }
 
 /* Links */
 a {
-    color: #538d4e;
+    color: var(--primary-green);
     text-decoration: none;
 }
 
@@ -112,14 +131,14 @@ a:hover {
     display: block;
     text-align: center;
     margin-top: 2rem;
-    color: #538d4e;
+    color: var(--primary-green);
     text-decoration: none;
     font-weight: 600;
     transition: color 0.2s ease;
 }
 
 .back-link:hover {
-    color: #6aaa64;
+    color: var(--primary-green-light);
     text-decoration: underline;
 }
 
@@ -137,5 +156,12 @@ a:hover {
     
     .nav-buttons {
         gap: 0.5rem;
+    }
+}
+
+/* Mobile-specific styles */
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.6rem;
     }
 }

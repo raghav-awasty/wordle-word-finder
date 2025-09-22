@@ -5,58 +5,34 @@ body {
     max-width: 600px;
     margin: 40px auto;
     padding: 2rem;
-    border: 1px solid #3a3a3c;
-    border-radius: 8px;
+    border: 1px solid var(--border-gray);
+    border-radius: var(--border-radius);
 }
 
+/* Page-specific overrides for form elements */
 label {
-    display: block;
     margin-top: 1.25rem;
-    margin-bottom: 0.5rem;
-    font-size: 1.1rem;
-    color: #d7dadc;
     font-weight: 600;
 }
 
 input {
     width: 100%;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-    border: 2px solid #3a3a3c;
-    background-color: #202124;
-    color: white;
-    border-radius: 8px;
-    box-sizing: border-box;
-    transition: border-color 0.3s;
     font-family: 'Inter', sans-serif;
-}
-
-input:focus {
-    border-color: #3a3a3c;
-    outline: none;
 }
 
 button {
     width: 100%;
     margin: 1.25rem auto 2rem auto;
-    padding: 0.75rem 2rem;
-    background-color: #b59f3b;
-    border: none;
-    color: white;
-    font-size: 1.1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
+    background-color: var(--primary-yellow);
     font-family: 'Inter', sans-serif;
-    transition: background-color 0.3s, transform 0.2s;
 }
 
 button:hover {
-    background-color: #538d4e;
+    background-color: var(--primary-green);
 }
 
 button:active {
-    background-color: #6aaa64;
+    background-color: var(--primary-green-light);
     transform: translateY(1px);
 }
 
@@ -64,18 +40,5 @@ button:active {
     margin-top: 1.5rem;
     text-align: center;
     font-weight: 600;
-    color: #d7dadc;
-}
-
-/* Status message colors */
-#status[style*="color: #6aaa64"] {
-    /* Success messages already have inline color */
-}
-
-#status[style*="color: #cf222e"] {
-    /* Error messages already have inline color */
-}
-
-#status[style*="color: #0969da"] {
-    /* Info messages already have inline color */
+    color: var(--text-gray);
 }
