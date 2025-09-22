@@ -16,7 +16,7 @@ A minimal web-based tool to help you find all valid 5-letter English words that 
 
 ## 🛠️ How It Works
 
-- A list of valid English 5-letter words is stored in `valid_words.json` (from [@dracos](https://gist.github.com/dracos/dd0668f281e685bad51479e5acaadb93)).
+- A list of valid English 5-letter words with frequency data is stored in `valid_words_frequencies.csv` (based on [@dracos](https://gist.github.com/dracos/dd0668f281e685bad51479e5acaadb93)).
 - Input tiles capture your current Wordle guess with the Green, Yellow and Gray characters.
 - JavaScript filters this list based on your input.
 

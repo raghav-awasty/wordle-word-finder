@@ -10,13 +10,10 @@ async function loadWords() {
         console.log(`Loaded ${validWordsWithFrequency.length} words with frequencies`);
     } catch (error) {
         console.error('Failed to load valid words with frequencies:', error);
-        // Fallback to JSON if CSV fails
-        try {
-            const words = await DataLoader.loadJSON('data/valid_words.json');
-            validWordsWithFrequency = words.map(word => ({ word, frequency: 0 }));
-            console.log(`Fallback: Loaded ${validWordsWithFrequency.length} words without frequencies`);
-        } catch (fallbackError) {
-            console.error('Failed to load fallback word list:', fallbackError);
+        // Show user-friendly error message
+        const resultsContainer = document.getElementById('results');
+        if (resultsContainer) {
+            resultsContainer.innerHTML = '<div class="no-results">⚠️ Unable to load word database. Please refresh the page.</div>';
         }
     }
 }

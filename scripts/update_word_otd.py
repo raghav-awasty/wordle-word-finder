@@ -3,12 +3,13 @@ It checks if the word is valid, fetches its definition, and appends it to the hi
 This script is intended to be run as part of a GitHub Action workflow."""
 
 import json
+import csv
 from datetime import date
 import os
 import sys
 import requests
 
-VALID_WORDS_PATH = "./data/valid_words.json"
+VALID_WORDS_PATH = "./data/valid_words_frequencies.csv"
 WOTD_HISTORY_PATH = "./data/word_otd.json"
 
 
@@ -39,11 +40,18 @@ def update_word_of_the_day(new_word):
     if not os.path.exists(VALID_WORDS_PATH):
         print(f"Valid words file '{VALID_WORDS_PATH}' not found.")
         sys.exit(1)
+    
+    valid_words = set()
     with open(VALID_WORDS_PATH, "r", encoding="utf-8") as f:
         try:
-            valid_words = set(json.load(f))
-        except json.JSONDecodeError:
-            print(f"Could not load valid words from '{VALID_WORDS_PATH}'.")
+            csv_reader = csv.reader(f)
+            for row in csv_reader:
+                if row and len(row) >= 1:  # Ensure row has at least word column
+                    word = row[0].lower().strip()
+                    if word:  # Only add non-empty words
+                        valid_words.add(word)
+        except (csv.Error, UnicodeDecodeError) as e:
+            print(f"Could not load valid words from '{VALID_WORDS_PATH}': {e}")
             sys.exit(1)
 
     if new_word not in valid_words:
