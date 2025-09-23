@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <style>
+      .tile { fill: #538d4e; stroke: #3a3a3c; stroke-width: 1; }
+      .letter { fill: white; font-family: Arial, sans-serif; font-weight: bold; font-size: 9px; text-anchor: middle; dominant-baseline: middle; }
+      .glass { fill: #E6F3FF; stroke: #3a3a3c; stroke-width: 2; }
+      .handle { stroke: #8B4513; stroke-width: 3; stroke-linecap: round; }
+    </style>
+  </defs>
+  
+  <!-- Magnifying glass lens -->
+  <circle cx="14" cy="14" r="11" class="glass"/>
+  
+  <!-- Magnifying glass handle -->
+  <line x1="22.5" y1="22.5" x2="29" y2="29" class="handle"/>
+  
+  <!-- Letter tile inside the lens -->
+  <rect x="8" y="8" width="12" height="12" rx="1.5" class="tile"/>
+  
+  <!-- Letter W -->
+  <text x="14" y="14.5" class="letter">W</text>
+</svg>
