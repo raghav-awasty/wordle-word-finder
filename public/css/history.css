@@ -6,6 +6,65 @@ body {
     overflow-x: hidden;
 }
 
+/* Streak Statistics Styles */
+.streak-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-gray);
+    gap: 2rem;
+}
+
+.streak-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.streak-number {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--primary-green);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.streak-label {
+    font-size: 0.9rem;
+    color: var(--text-gray);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.streak-divider {
+    width: 1px;
+    height: 60px;
+    background-color: var(--border-gray);
+}
+
+/* Animation for streak numbers */
+.streak-number.animate {
+    animation: countUp 0.6s ease-out;
+}
+
+@keyframes countUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 #calendar {
     transform: translate3d(0, 0, 0);
     width: 100%;
@@ -343,5 +402,25 @@ body {
 
     .event h3 {
         font-size: 1.1rem;
+    }
+    
+    /* Mobile streak styles */
+    .streak-container {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .streak-divider {
+        width: 60px;
+        height: 1px;
+    }
+    
+    .streak-number {
+        font-size: 2rem;
+    }
+    
+    .streak-label {
+        font-size: 0.8rem;
     }
 }

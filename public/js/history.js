@@ -3,6 +3,98 @@
 let wordsData = [];
 let today = new Date();
 
+// Streak calculation functions
+function calculateCurrentStreak(wordsData) {
+    if (wordsData.length === 0) return 0;
+    
+    // Sort words by date (most recent first)
+    const sortedWords = wordsData.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // Get today's date in YYYY-MM-DD format
+    const todayStr = formatDateString(new Date());
+    
+    let currentStreak = 0;
+    let checkDate = new Date();
+    
+    // Start checking from today backwards
+    while (true) {
+        const checkDateStr = formatDateString(checkDate);
+        const hasWordForDate = sortedWords.some(word => 
+            formatDateString(word.date) === checkDateStr
+        );
+        
+        if (hasWordForDate) {
+            currentStreak++;
+            // Move to previous day
+            checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+            // Streak is broken
+            break;
+        }
+    }
+    
+    return currentStreak;
+}
+
+function calculateLongestStreak(wordsData) {
+    if (wordsData.length === 0) return 0;
+    
+    // Sort words by date (oldest first)
+    const sortedWords = wordsData.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    let longestStreak = 1;
+    let currentStreak = 1;
+    
+    for (let i = 1; i < sortedWords.length; i++) {
+        const prevDate = new Date(sortedWords[i - 1].date);
+        const currDate = new Date(sortedWords[i].date);
+        
+        // Calculate the difference in days
+        const daysDiff = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
+        
+        if (daysDiff === 1) {
+            // Consecutive day - increment current streak
+            currentStreak++;
+        } else {
+            // Gap in dates - reset current streak
+            longestStreak = Math.max(longestStreak, currentStreak);
+            currentStreak = 1;
+        }
+    }
+    
+    // Don't forget to check the final streak
+    longestStreak = Math.max(longestStreak, currentStreak);
+    
+    return longestStreak;
+}
+
+function formatDateString(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function updateStreakDisplay(currentStreak, longestStreak) {
+    const currentStreakEl = document.getElementById('current-streak');
+    const longestStreakEl = document.getElementById('longest-streak');
+    
+    if (currentStreakEl && longestStreakEl) {
+        // Add animation class and update numbers
+        currentStreakEl.classList.add('animate');
+        longestStreakEl.classList.add('animate');
+        
+        currentStreakEl.textContent = currentStreak;
+        longestStreakEl.textContent = longestStreak;
+        
+        // Remove animation class after animation completes
+        setTimeout(() => {
+            currentStreakEl.classList.remove('animate');
+            longestStreakEl.classList.remove('animate');
+        }, 600);
+    }
+}
+
 function Calendar(selector) {
     this.el = document.querySelector(selector);
     this.current = new Date();
@@ -294,9 +386,19 @@ async function loadHistory() {
             definition: entry.definition
         }));
 
+        // Calculate streaks
+        const currentStreak = calculateCurrentStreak(wordsData);
+        const longestStreak = calculateLongestStreak(wordsData);
+        
+        // Update streak display
+        updateStreakDisplay(currentStreak, longestStreak);
+
+        // Initialize calendar
         new Calendar('#calendar');
     } catch (error) {
         console.error('Error loading word history:', error);
+        // Show 0 streaks on error
+        updateStreakDisplay(0, 0);
     }
 }
 
