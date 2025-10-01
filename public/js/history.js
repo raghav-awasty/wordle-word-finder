@@ -10,13 +10,38 @@ function calculateCurrentStreak(wordsData) {
     // Sort words by date (most recent first)
     const sortedWords = wordsData.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
     
-    // Get today's date in YYYY-MM-DD format
-    const todayStr = formatDateString(new Date());
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const todayStr = formatDateString(today);
+    const yesterdayStr = formatDateString(yesterday);
+    
+    // Check if we have today's entry
+    const hasTodayEntry = sortedWords.some(word => 
+        formatDateString(word.date) === todayStr
+    );
+    
+    // Check if we have yesterday's entry
+    const hasYesterdayEntry = sortedWords.some(word => 
+        formatDateString(word.date) === yesterdayStr
+    );
     
     let currentStreak = 0;
-    let checkDate = new Date();
+    let checkDate;
     
-    // Start checking from today backwards
+    if (hasTodayEntry) {
+        // Start counting from today
+        checkDate = new Date(today);
+    } else if (hasYesterdayEntry) {
+        // Today's missing but yesterday exists, start from yesterday
+        checkDate = new Date(yesterday);
+    } else {
+        // Both today and yesterday are missing - streak is broken
+        return 0;
+    }
+    
+    // Count consecutive days backwards
     while (true) {
         const checkDateStr = formatDateString(checkDate);
         const hasWordForDate = sortedWords.some(word => 
