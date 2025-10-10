@@ -24,7 +24,7 @@ function submitWordViaIssue() {
     document.getElementById('word').value = '';
     
     // Show success message
-    showStatus(`Opened issue creation for word: ${word}. Click "Submit new issue" to complete.`, 'success');
+    showStatus(`Creating issue for word: ${word}. Click "Create" to complete.`, 'success');
 }
 
 
