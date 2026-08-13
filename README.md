@@ -52,7 +52,7 @@ No tokens or secrets needed in the browser — submission goes through a GitHub 
 3. The [`process_word_submission`](.github/workflows/process_word_submission.yml) workflow fires on issue creation and runs [`scripts/update_word_otd.py`](scripts/update_word_otd.py), which:
    * validates the word is 5 letters and present in `valid_words_frequencies.csv`,
    * rejects it if it has already been used,
-   * fetches a definition from [dictionaryapi.dev](https://dictionaryapi.dev),
+   * fetches a definition from [dictionaryapi.dev](https://dictionaryapi.dev), falling back to [Datamuse](https://api.datamuse.com) if that has no entry,
    * appends the entry to `data/word_otd.json` and commits it.
 4. The bot comments the result on the issue and closes it on success.
 

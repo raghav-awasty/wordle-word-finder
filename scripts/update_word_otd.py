@@ -68,40 +68,35 @@ def _from_dictionaryapi(word):
         return None
 
 
-def _from_wiktionary(word):
-    """Fallback source: Wiktionary REST definitions endpoint.
+def _from_datamuse(word):
+    """Fallback source: Datamuse.
 
-    Parsed defensively -- any unexpected shape returns None so the caller can
-    fall through rather than writing garbage into the history file.
+    Draws on a different corpus from dictionaryapi.dev, so the two rarely fail
+    on the same word -- 'spiny' has no dictionaryapi.dev entry at all but is
+    well covered here. Needs no API key.
+
+    Definitions arrive as "pos<TAB>text", e.g. "adj\\tCovered in spines or
+    thorns. ", so the part-of-speech prefix is split off.
     """
-    data = _fetch_json(f"https://en.wiktionary.org/api/rest_v1/page/definition/{word}")
-    if not isinstance(data, dict):
+    data = _fetch_json(f"https://api.datamuse.com/words?sp={word}&md=d&max=1")
+    if not isinstance(data, list) or not data:
         return None
-    try:
-        for entry in data.get("en", []):
-            for definition in entry.get("definitions", []):
-                text = definition.get("definition", "").strip()
-                # The REST payload embeds HTML; strip tags crudely but safely.
-                text = _strip_html(text)
-                if text:
-                    return text
-    except (AttributeError, TypeError) as exc:
-        print(f"  unexpected Wiktionary response shape: {exc}")
+
+    entry = data[0]
+    if not isinstance(entry, dict):
+        return None
+
+    # `sp` is a spelling pattern, so confirm we got the word we asked for.
+    if entry.get("word", "").lower() != word.lower():
+        print(f"  Datamuse returned '{entry.get('word')}' for '{word}'")
+        return None
+
+    for raw in entry.get("defs") or []:
+        text = raw.split("\t", 1)[-1].strip() if isinstance(raw, str) else ""
+        if text:
+            return text[0].upper() + text[1:]
+
     return None
-
-
-def _strip_html(text):
-    """Remove HTML tags and collapse whitespace."""
-    out = []
-    depth = 0
-    for char in text:
-        if char == "<":
-            depth += 1
-        elif char == ">":
-            depth = max(0, depth - 1)
-        elif depth == 0:
-            out.append(char)
-    return " ".join("".join(out).split())
 
 
 def get_word_definition(word):
@@ -110,7 +105,7 @@ def get_word_definition(word):
     Returns the placeholder only if every source is exhausted.
     """
     print(f"Fetching definition for '{word}'...")
-    for source in (_from_dictionaryapi, _from_wiktionary):
+    for source in (_from_dictionaryapi, _from_datamuse):
         definition = source(word)
         if definition:
             print(f"  found via {source.__name__}")
