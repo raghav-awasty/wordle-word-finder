@@ -1,0 +1,10 @@
+# Normalise line endings so a Windows checkout doesn't show every file as
+# modified. Text files are stored with LF in the repository; git converts on
+# checkout according to each machine's settings.
+* text=auto eol=lf
+
+# Binary / already-compressed assets: never touch these.
+*.png binary
+*.jpg binary
+*.ico binary
+*.mp3 binary

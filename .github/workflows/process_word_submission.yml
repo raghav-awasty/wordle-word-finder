@@ -40,6 +40,12 @@ jobs:
           WORD_TO_ADD: ${{ steps.extract_word.outputs.word }}
         run: python ./scripts/update_word_otd.py
 
+      # Any earlier entry left with a placeholder definition gets another try on
+      # each run, so a transient API failure self-heals on the next submission.
+      - name: Backfill any missing definitions
+        continue-on-error: true
+        run: python ./scripts/update_word_otd.py --backfill
+
       - name: Commit and push changes
         run: |
           git config --global user.name 'Raghav Awasty'
