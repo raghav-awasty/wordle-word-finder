@@ -6,26 +6,28 @@ A minimal web-based tool to help you find all valid 5-letter English words that 
 
 ## 🔍 Features
 
-- **Wordle-inspired UI** with tile-based inputs and matching color logic
-- Instantly shows all valid 5-letter words that contain input letters
-  - 🟩 **Green Tiles** — specify correct letters at correct positions
-  - 🟨 **Yellow Characters** — specify letters that are present but in unknown positions
-  - ⬛ **Gray Characters** — exclude letters that are not in the word
-- 🗂️ **Word History** — view previous “Word of the Day” entries along with definitions
-- 📬 **Submit Page** — easily submit a new word and trigger GitHub Actions to update history
+- **A real Wordle board** — type your guesses into a 6×5 grid and tap each tile to set its colour, exactly as the game shows it
+- Results filter **live** as you type and recolour, ranked by how common each word is
+- **Correct handling of repeated letters** — because guesses are recorded row by row, the solver can tell "two E's in one guess" (the answer has at least two) apart from "an E in two different guesses" (it has at least one)
+- 🗂️ **Word History** — past “Word of the Day” entries on a calendar, with current and longest streaks
+- 📬 **Submit Page** — submit a new word and trigger GitHub Actions to update the history
 
 ## 🛠️ How It Works
 
 - A list of valid English 5-letter words with frequency data is stored in `valid_words_frequencies.csv` (based on [@dracos](https://gist.github.com/dracos/dd0668f281e685bad51479e5acaadb93)).
-- Input tiles capture your current Wordle guess with the Green, Yellow and Gray characters.
-- JavaScript filters this list based on your input.
+- Each filled row is read as one guess. For every letter in that row the solver works out:
+  - 🟩 green → that exact position is fixed
+  - 🟨 yellow → the letter is in the word but not at that position
+  - ⬛ grey → if the same letter is green or yellow elsewhere in the row, the answer holds *exactly* that many of it; otherwise the letter is absent entirely
+- Constraints from all rows are combined, and the word list is filtered against them in the browser.
 
 ## 🕹 Usage
 
-1. Fill in the green tile positions if you know any correct letter.
-2. Add yellow tiles to indicate correct letters at incorrect positions.
-3. Type gray letters (not in the word) into the exclusion box.
-4. Hit **Enter** or click **Search** to see results.
+1. Type a guess you have already played into a row.
+2. Click (or tap) each tile to cycle it grey → yellow → green to match what Wordle showed you.
+3. Matching words appear immediately, most common first. Add another guess to narrow further.
+
+Keyboard: letters type, **Backspace** deletes, **arrow keys** move, **Space** recolours the tile under the cursor (**Shift+Space** cycles backwards).
 
 ## 🌐 Pages
 

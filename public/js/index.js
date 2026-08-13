@@ -1,245 +1,443 @@
-// Index page specific functionality
+// Index page: Wordle-style guess grid + constraint solver.
+//
+// Input model
+// -----------
+// Constraints are captured PER GUESS rather than as one merged pile of
+// green/yellow/gray letters. That distinction matters for repeated letters:
+// two yellow E's in a single guess prove the answer holds at least two E's,
+// whereas a yellow E in two separate guesses proves only that it holds one.
+// A flat model cannot tell those apart; this one can.
+
+const ROWS = 6;
+const COLS = 5;
+
+// Tile states, in the order clicking cycles through them.
+const STATES = ['absent', 'present', 'correct'];
+
+const MAX_RENDERED_RESULTS = 300;
 
 let validWordsWithFrequency = [];
 
-// Load valid words data from CSV with frequencies
+// guesses[row][col] = { letter: 'a'-'z' or '', state: one of STATES }
+const guesses = Array.from({ length: ROWS }, () =>
+    Array.from({ length: COLS }, () => ({ letter: '', state: 'absent' }))
+);
+
+// Cursor position for typing.
+let cursor = { row: 0, col: 0 };
+
+// ---------------------------------------------------------------------------
+// Word list
+// ---------------------------------------------------------------------------
+
 async function loadWords() {
     try {
         const csvText = await DataLoader.loadText('data/valid_words_frequencies.csv');
         validWordsWithFrequency = parseCsvToWordsFrequencies(csvText);
         console.log(`Loaded ${validWordsWithFrequency.length} words with frequencies`);
+        runSearch();
     } catch (error) {
         console.error('Failed to load valid words with frequencies:', error);
-        // Show user-friendly error message
         const resultsContainer = document.getElementById('results');
         if (resultsContainer) {
-            resultsContainer.innerHTML = '<div class="no-results">⚠️ Unable to load word database. Please refresh the page.</div>';
+            resultsContainer.innerHTML =
+                '<div class="no-results">⚠️ Unable to load word database. Please refresh the page.</div>';
         }
     }
 }
 
-// Parse CSV text into array of {word, frequency} objects
 function parseCsvToWordsFrequencies(csvText) {
     const lines = csvText.trim().split('\n');
     const wordsWithFreq = [];
-    
+
     for (const line of lines) {
         const [word, frequencyStr] = line.split(',');
         if (word && frequencyStr) {
-            const frequency = parseFloat(frequencyStr);
-            wordsWithFreq.push({ 
-                word: word.toLowerCase().trim(), 
-                frequency: frequency || 0 
+            wordsWithFreq.push({
+                word: word.toLowerCase().trim(),
+                frequency: parseFloat(frequencyStr) || 0
             });
         }
     }
-    
-    // Sort by frequency (highest first)
+
     return wordsWithFreq.sort((a, b) => b.frequency - a.frequency);
 }
 
-// Main search function
-function searchWords() {
-    const grayLetters = document.getElementById('grayInput').value.toLowerCase();
-    const graySet = new Set(grayLetters);
+// ---------------------------------------------------------------------------
+// Constraint derivation
+// ---------------------------------------------------------------------------
 
-    // Read green-tile characters by position
-    const greenPositions = [];
-    for (let i = 0; i < 5; i++) {
-        const char = document.getElementById(`pos${i}`).value.toLowerCase();
-        greenPositions[i] = (char >= 'a' && char <= 'z') ? char : null;
-    }
+/**
+ * Turn the filled guess rows into a set of constraints.
+ *
+ * Per guess, for each distinct letter:
+ *   - `known` = how many times it is marked green or yellow
+ *   - if it is ALSO marked grey somewhere in that same guess, Wordle has told
+ *     us the answer contains exactly `known` of it (the extras came back grey
+ *     precisely because the supply ran out)
+ *   - otherwise the answer contains at least `known`
+ *
+ * Across guesses, minimums take the strongest (highest) value and any exact
+ * count wins outright.
+ */
+function deriveConstraints(rows) {
+    const fixed = new Array(COLS).fill(null);
+    const excluded = Array.from({ length: COLS }, () => new Set());
+    const minCount = new Map();
+    const exactCount = new Map();
+    let hasAnyConstraint = false;
 
-    // Read yellow-tile characters by position (characters that should NOT be in these positions)
-    const yellowPositions = [];
-    const allYellowChars = new Set();
-    for (let i = 0; i < 5; i++) {
-        const chars = getYellowTileChars(i);
-        yellowPositions[i] = new Set(chars);
-        // Add all yellow characters to the overall set
-        for (let char of chars) {
-            allYellowChars.add(char);
-        }
-    }
+    for (const row of rows) {
+        const filled = row
+            .map((tile, index) => ({ ...tile, index }))
+            .filter(tile => tile.letter);
 
-    const results = validWordsWithFrequency.filter(wordObj => {
-        const word = wordObj.word;
-        
-        // Check green-tile matches (fixed positions)
-        for (let i = 0; i < 5; i++) {
-            if (greenPositions[i] && word[i] !== greenPositions[i]) {
-                return false;
-            }
-        }
+        if (filled.length === 0) continue;
+        hasAnyConstraint = true;
 
-        // Check yellow position constraints (characters that should NOT be in specific positions)
-        for (let i = 0; i < 5; i++) {
-            if (yellowPositions[i].has(word[i])) {
-                return false; // Character is in a position where it shouldn't be
-            }
-        }
+        // Count green/yellow occurrences per letter within THIS guess.
+        const known = new Map();
+        const greyed = new Set();
 
-        // Check that all yellow position characters are actually in the word somewhere
-        for (let ch of allYellowChars) {
-            if (!word.includes(ch)) {
-                return false;
-            }
-        }
-
-        // Check grey characters with special logic for characters that also appear in green/yellow
-        const greenSet = new Set(greenPositions.filter(char => char !== null));
-        const greenYellowSet = new Set([...greenSet, ...allYellowChars]);
-        
-        for (let ch of graySet) {
-            if (greenYellowSet.has(ch)) {
-                // If character appears in both green/yellow and grey, check occurrence count
-                const occurrences = (word.match(new RegExp(ch, 'g')) || []).length;
-                if (occurrences > 1) {
-                    return false; // Remove words with more than one occurrence
-                }
+        for (const tile of filled) {
+            if (tile.state === 'correct' || tile.state === 'present') {
+                known.set(tile.letter, (known.get(tile.letter) || 0) + 1);
             } else {
-                // If character only appears in grey, exclude words containing it
-                if (word.includes(ch)) {
-                    return false;
-                }
+                greyed.add(tile.letter);
             }
         }
 
-        return true;
-    });
+        for (const tile of filled) {
+            if (tile.state === 'correct') {
+                fixed[tile.index] = tile.letter;
+            } else if (tile.state === 'present') {
+                // In the word, but demonstrably not here.
+                excluded[tile.index].add(tile.letter);
+            } else if (known.has(tile.letter)) {
+                // Grey, but the letter is confirmed elsewhere in this guess.
+                // Had the answer carried this letter at this position it would
+                // have come back green, so the position is still ruled out.
+                excluded[tile.index].add(tile.letter);
+            }
+        }
 
-    displayResults(results);
+        for (const [letter, count] of known) {
+            minCount.set(letter, Math.max(minCount.get(letter) || 0, count));
+            if (greyed.has(letter)) {
+                exactCount.set(letter, count);
+            }
+        }
+
+        // A letter marked grey with no green/yellow twin is simply absent.
+        for (const letter of greyed) {
+            if (!known.has(letter)) {
+                exactCount.set(letter, 0);
+            }
+        }
+    }
+
+    return { fixed, excluded, minCount, exactCount, hasAnyConstraint };
 }
 
-// Get characters from yellow tile
-function getYellowTileChars(index) {
-    // Try to get from hidden input first (mobile-friendly)
-    const input = document.getElementById(`yellowInput${index}`);
-    if (input && input.value) {
-        return input.value.toLowerCase().replace(/[^a-z]/g, '');
+function matchesConstraints(word, constraints) {
+    const { fixed, excluded, minCount, exactCount } = constraints;
+
+    for (let i = 0; i < COLS; i++) {
+        if (fixed[i] && word[i] !== fixed[i]) return false;
+        if (excluded[i].has(word[i])) return false;
     }
-    
-    // Fallback to dataset for desktop
-    const tile = document.getElementById(`yellow${index}`);
-    return tile.dataset.chars || '';
+
+    const counts = new Map();
+    for (const char of word) {
+        counts.set(char, (counts.get(char) || 0) + 1);
+    }
+
+    for (const [letter, n] of minCount) {
+        if ((counts.get(letter) || 0) < n) return false;
+    }
+
+    for (const [letter, n] of exactCount) {
+        if ((counts.get(letter) || 0) !== n) return false;
+    }
+
+    return true;
 }
 
-// Update yellow tile display
-function updateYellowTileDisplay(index) {
-    const tile = document.getElementById(`yellow${index}`);
-    const input = document.getElementById(`yellowInput${index}`);
-    const chars = tile.dataset.chars || '';
-    const cursorPos = parseInt(tile.dataset.cursorPos || '0');
-    const isMobile = isMobileDevice();
-    
-    // Clear the tile
-    tile.innerHTML = '';
-    
-    // Create grid structure with cursor support
-    // On mobile, show cursor if hidden input is focused; on desktop, show if tile is focused
-    const showCursor = isMobile ? (input && document.activeElement === input) : (document.activeElement === tile);
-    
-    // Fill grid positions (4 positions total in 2x2 grid)
-    for (let i = 0; i < 4; i++) {
-        const cellDiv = document.createElement('div');
-        
-        if (i < chars.length) {
-            // Position has a character
-            cellDiv.className = 'yellow-char';
-            
-            // If cursor is right before this character, show cursor then character
-            if (showCursor && i === cursorPos) {
-                cellDiv.innerHTML = `<span class="inline-cursor">|</span>${chars[i].toUpperCase()}`;
-            } else {
-                cellDiv.textContent = chars[i].toUpperCase();
-            }
-        } else if (showCursor && i === cursorPos) {
-            // Empty position with cursor (cursor at end)
-            cellDiv.className = 'yellow-cursor';
-            cellDiv.textContent = '|';
+function runSearch() {
+    if (validWordsWithFrequency.length === 0) return;
+
+    const constraints = deriveConstraints(guesses);
+
+    if (!constraints.hasAnyConstraint) {
+        document.getElementById('results').innerHTML =
+            '<div class="no-results">Enter a guess above to filter the word list.</div>';
+        return;
+    }
+
+    displayResults(
+        validWordsWithFrequency.filter(entry => matchesConstraints(entry.word, constraints))
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Grid rendering and interaction
+// ---------------------------------------------------------------------------
+
+function buildGrid() {
+    const grid = document.getElementById('guessGrid');
+    grid.innerHTML = '';
+
+    for (let row = 0; row < ROWS; row++) {
+        const rowEl = createElement('div', 'guess-row');
+        for (let col = 0; col < COLS; col++) {
+            const tile = createElement('div', 'guess-tile');
+            tile.dataset.row = row;
+            tile.dataset.col = col;
+            tile.setAttribute('role', 'button');
+            tile.setAttribute('tabindex', '-1');
+            rowEl.appendChild(tile);
+        }
+        grid.appendChild(rowEl);
+    }
+
+    grid.addEventListener('click', onGridClick);
+    renderGrid();
+}
+
+function renderGrid() {
+    document.querySelectorAll('.guess-tile').forEach(tile => {
+        const row = Number(tile.dataset.row);
+        const col = Number(tile.dataset.col);
+        const { letter, state } = guesses[row][col];
+
+        tile.textContent = letter.toUpperCase();
+
+        const classes = ['guess-tile'];
+        if (letter) {
+            classes.push(state);
         } else {
-            // Empty position (no cursor)
-            cellDiv.className = 'yellow-char empty';
+            classes.push('empty');
         }
-        
-        tile.appendChild(cellDiv);
+        if (row === cursor.row && col === cursor.col) {
+            classes.push('cursor');
+        }
+        tile.className = classes.join(' ');
+
+        tile.setAttribute(
+            'aria-label',
+            letter ? `Row ${row + 1} position ${col + 1}: ${letter.toUpperCase()}, ${state}`
+                   : `Row ${row + 1} position ${col + 1}: empty`
+        );
+    });
+}
+
+function onGridClick(event) {
+    const tile = event.target.closest('.guess-tile');
+    if (!tile) return;
+
+    const row = Number(tile.dataset.row);
+    const col = Number(tile.dataset.col);
+    const cell = guesses[row][col];
+
+    if (cell.letter) {
+        // Filled tile: cycle its colour.
+        const next = (STATES.indexOf(cell.state) + 1) % STATES.length;
+        cell.state = STATES[next];
+        update();
+    } else {
+        // Empty tile: move the typing cursor here.
+        cursor = { row, col };
+        renderGrid();
+    }
+
+    focusKeyboardProxy();
+}
+
+function typeLetter(letter) {
+    guesses[cursor.row][cursor.col] = { letter, state: 'absent' };
+    advanceCursor();
+    update();
+}
+
+function advanceCursor() {
+    if (cursor.col < COLS - 1) {
+        cursor.col++;
+    } else if (cursor.row < ROWS - 1) {
+        cursor = { row: cursor.row + 1, col: 0 };
     }
 }
 
-// Display search results
+function retreatCursor() {
+    if (cursor.col > 0) {
+        cursor.col--;
+    } else if (cursor.row > 0) {
+        cursor = { row: cursor.row - 1, col: COLS - 1 };
+    }
+}
+
+function handleBackspace() {
+    const current = guesses[cursor.row][cursor.col];
+    if (current.letter) {
+        // Clear in place.
+        current.letter = '';
+        current.state = 'absent';
+    } else {
+        retreatCursor();
+        const previous = guesses[cursor.row][cursor.col];
+        previous.letter = '';
+        previous.state = 'absent';
+    }
+    update();
+}
+
+function cycleCurrentTile(direction) {
+    const cell = guesses[cursor.row][cursor.col];
+    if (!cell.letter) return;
+    const offset = direction === 'back' ? STATES.length - 1 : 1;
+    cell.state = STATES[(STATES.indexOf(cell.state) + offset) % STATES.length];
+    update();
+}
+
+function onKeyDown(event) {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+    const key = event.key;
+
+    if (/^[a-zA-Z]$/.test(key)) {
+        event.preventDefault();
+        typeLetter(key.toLowerCase());
+    } else if (key === 'Backspace') {
+        event.preventDefault();
+        handleBackspace();
+    } else if (key === 'ArrowLeft') {
+        event.preventDefault();
+        retreatCursor();
+        renderGrid();
+    } else if (key === 'ArrowRight') {
+        event.preventDefault();
+        advanceCursor();
+        renderGrid();
+    } else if (key === 'ArrowUp' && cursor.row > 0) {
+        event.preventDefault();
+        cursor.row--;
+        renderGrid();
+    } else if (key === 'ArrowDown' && cursor.row < ROWS - 1) {
+        event.preventDefault();
+        cursor.row++;
+        renderGrid();
+    } else if (key === ' ' || key === 'Enter') {
+        // Space/Enter recolours the tile under the cursor -- keyboard parity
+        // with clicking it.
+        event.preventDefault();
+        cycleCurrentTile(event.shiftKey ? 'back' : 'forward');
+    }
+}
+
+function clearGrid() {
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+            guesses[row][col] = { letter: '', state: 'absent' };
+        }
+    }
+    cursor = { row: 0, col: 0 };
+    update();
+}
+
+// Re-render and re-filter together; every mutation routes through here.
+function update() {
+    renderGrid();
+    runSearch();
+}
+
+// The proxy input exists purely to summon the on-screen keyboard on mobile.
+// It is never read from -- keystrokes are handled by the document listener.
+function focusKeyboardProxy() {
+    const proxy = document.getElementById('keyboardProxy');
+    if (proxy && document.activeElement !== proxy) {
+        proxy.focus({ preventScroll: true });
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Results
+// ---------------------------------------------------------------------------
+
 function displayResults(results) {
     const resultsContainer = document.getElementById('results');
+
     if (results.length === 0) {
         resultsContainer.innerHTML = '<div class="no-results">No matching words found.</div>';
-    } else {
-        // Calculate frequency statistics for visualization
-        const maxFreq = Math.max(...results.map(w => w.frequency));
-        const minFreq = Math.min(...results.map(w => w.frequency));
-        const avgFreq = results.reduce((sum, w) => sum + w.frequency, 0) / results.length;
-        
-        // Create frequency distribution data
-        const distribution = createFrequencyDistribution(results, maxFreq, minFreq);
-        
-        // Add results header with frequency stats and mini chart
-        const resultsHeader = `<div class="results-header">
-            <div class="results-info">
-                <span class="results-count">${results.length} word${results.length !== 1 ? 's' : ''} found</span>
-                <span class="results-sort">• sorted by frequency</span>
-            </div>
-            <div class="frequency-stats">
-                <div class="frequency-legend">
-                    <span class="legend-item"><span class="legend-color high"></span>High (${distribution.high})</span>
-                    <span class="legend-item"><span class="legend-color medium"></span>Medium (${distribution.medium})</span>
-                    <span class="legend-item"><span class="legend-color low"></span>Low (${distribution.low})</span>
-                </div>
-                <div class="frequency-distribution">
-                    ${createDistributionBars(distribution, results.length)}
-                </div>
-            </div>
-        </div>`;
-        
-        // Results are already sorted by frequency (highest first) from the filter
-        const resultsHtml = results
-            .map((wordObj, index) => {
-                const frequencyPercent = maxFreq > 0 ? (wordObj.frequency / maxFreq) * 100 : 0;
-                const frequencyTier = getFrequencyTier(wordObj.frequency, maxFreq, minFreq);
-                const rank = index + 1;
-                
-                const rankDisplay = rank <= 10 ? `<span class="rank">#${rank}</span>` : '';
-                const frequencyDisplay = wordObj.frequency > 0 
-                    ? `<span class="frequency">${wordObj.frequency.toFixed(1)}</span>`
-                    : '';
-                    
-                const relativeFreqText = getRelativeFrequencyText(wordObj.frequency, avgFreq);
-                const tooltip = `Frequency: ${wordObj.frequency.toFixed(1)} (${relativeFreqText})`;
-                
-                return `<div class="word ${frequencyTier}" title="${tooltip}">
-                    <div class="word-content">
-                        ${rankDisplay}
-                        <span class="word-text">${wordObj.word.toUpperCase()}</span>
-                        ${frequencyDisplay}
-                    </div>
-                    <div class="frequency-bar" style="width: ${frequencyPercent}%"></div>
-                </div>`;
-            })
-            .join('');
-            
-        resultsContainer.innerHTML = resultsHeader + '<div class="results-grid">' + resultsHtml + '</div>';
+        return;
     }
+
+    const maxFreq = Math.max(...results.map(w => w.frequency));
+    const minFreq = Math.min(...results.map(w => w.frequency));
+    const avgFreq = results.reduce((sum, w) => sum + w.frequency, 0) / results.length;
+
+    const distribution = createFrequencyDistribution(results, maxFreq, minFreq);
+    const shown = results.slice(0, MAX_RENDERED_RESULTS);
+    const truncated = results.length - shown.length;
+
+    const resultsHeader = `<div class="results-header">
+        <div class="results-info">
+            <span class="results-count">${results.length} word${results.length !== 1 ? 's' : ''} found</span>
+            <span class="results-sort">• sorted by frequency</span>
+        </div>
+        <div class="frequency-stats">
+            <div class="frequency-legend">
+                <span class="legend-item"><span class="legend-color high"></span>High (${distribution.high})</span>
+                <span class="legend-item"><span class="legend-color medium"></span>Medium (${distribution.medium})</span>
+                <span class="legend-item"><span class="legend-color low"></span>Low (${distribution.low})</span>
+            </div>
+            <div class="frequency-distribution">
+                ${createDistributionBars(distribution, results.length)}
+            </div>
+        </div>
+    </div>`;
+
+    const resultsHtml = shown
+        .map((wordObj, index) => {
+            const frequencyPercent = maxFreq > 0 ? (wordObj.frequency / maxFreq) * 100 : 0;
+            const frequencyTier = getFrequencyTier(wordObj.frequency, maxFreq, minFreq);
+            const rank = index + 1;
+
+            const rankDisplay = rank <= 10 ? `<span class="rank">#${rank}</span>` : '';
+            const frequencyDisplay = wordObj.frequency > 0
+                ? `<span class="frequency">${wordObj.frequency.toFixed(1)}</span>`
+                : '';
+
+            const relativeFreqText = getRelativeFrequencyText(wordObj.frequency, avgFreq);
+            const tooltip = `Frequency: ${wordObj.frequency.toFixed(1)} (${relativeFreqText})`;
+
+            return `<div class="word ${frequencyTier}" title="${tooltip}">
+                <div class="word-content">
+                    ${rankDisplay}
+                    <span class="word-text">${wordObj.word.toUpperCase()}</span>
+                    ${frequencyDisplay}
+                </div>
+                <div class="frequency-bar" style="width: ${frequencyPercent}%"></div>
+            </div>`;
+        })
+        .join('');
+
+    const footer = truncated > 0
+        ? `<div class="results-truncated">Showing the ${MAX_RENDERED_RESULTS} most common — ${truncated} more match. Add another guess to narrow it down.</div>`
+        : '';
+
+    resultsContainer.innerHTML =
+        resultsHeader + '<div class="results-grid">' + resultsHtml + '</div>' + footer;
 }
 
-// Determine frequency tier for color coding
 function getFrequencyTier(frequency, maxFreq, minFreq) {
     const range = maxFreq - minFreq;
     const highThreshold = minFreq + (range * 0.7);
     const mediumThreshold = minFreq + (range * 0.3);
-    
+
     if (frequency >= highThreshold) return 'high-freq';
     if (frequency >= mediumThreshold) return 'medium-freq';
     return 'low-freq';
 }
 
-// Get relative frequency description
 function getRelativeFrequencyText(frequency, avgFreq) {
     const ratio = frequency / avgFreq;
     if (ratio > 2) return 'much more common than average';
@@ -249,29 +447,27 @@ function getRelativeFrequencyText(frequency, avgFreq) {
     return 'much less common than average';
 }
 
-// Create frequency distribution data
 function createFrequencyDistribution(results, maxFreq, minFreq) {
     const range = maxFreq - minFreq;
     const highThreshold = minFreq + (range * 0.7);
     const mediumThreshold = minFreq + (range * 0.3);
-    
+
     let high = 0, medium = 0, low = 0;
-    
+
     results.forEach(wordObj => {
         if (wordObj.frequency >= highThreshold) high++;
         else if (wordObj.frequency >= mediumThreshold) medium++;
         else low++;
     });
-    
+
     return { high, medium, low };
 }
 
-// Create mini distribution bar chart
 function createDistributionBars(distribution, total) {
     const highPercent = (distribution.high / total) * 100;
     const mediumPercent = (distribution.medium / total) * 100;
     const lowPercent = (distribution.low / total) * 100;
-    
+
     return `
         <div class="distribution-bar high" style="width: ${highPercent}%" title="${distribution.high} high-frequency words (${highPercent.toFixed(1)}%)"></div>
         <div class="distribution-bar medium" style="width: ${mediumPercent}%" title="${distribution.medium} medium-frequency words (${mediumPercent.toFixed(1)}%)"></div>
@@ -279,252 +475,25 @@ function createDistributionBars(distribution, total) {
     `;
 }
 
-// Handle tile navigation and input
-function setupTileHandlers() {
-    // Handle green tiles (input elements)
-    document.querySelectorAll('#tileRow .tile').forEach((tile, index, tiles) => {
-        tile.addEventListener('input', () => {
-            if (tile.value && index < tiles.length - 1) {
-                tiles[index + 1].focus();
-            }
-        });
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
 
-        tile.addEventListener('keydown', (event) => {
-            switch(event.key) {
-                case 'Backspace':
-                    if (!tile.value && index > 0) {
-                        tiles[index - 1].focus();
-                    }
-                    break;
-                case 'ArrowLeft':
-                    if (index > 0) {
-                        tiles[index - 1].focus();
-                        event.preventDefault();
-                    }
-                    break;
-                case 'ArrowRight':
-                    if (index < tiles.length - 1) {
-                        tiles[index + 1].focus();
-                        event.preventDefault();
-                    }
-                    break;
-            }
-        });
-    });
-}
-
-// Utility function to detect mobile devices
-function isMobileDevice() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-           ('ontouchstart' in window) || 
-           (window.innerWidth <= 768 && window.innerHeight <= 1024);
-}
-
-// Handle yellow tile input and display
-function setupYellowTileHandlers() {
-    const isMobile = isMobileDevice();
-    
-    for (let i = 0; i < 5; i++) {
-        const tile = document.getElementById(`yellow${i}`);
-        const input = document.getElementById(`yellowInput${i}`);
-        
-        // Set up initial state
-        tile.dataset.chars = '';
-        tile.dataset.cursorPos = '0';
-        
-        // Mobile input handler
-        if (input) {
-            input.addEventListener('input', (event) => {
-                const value = event.target.value.toLowerCase().replace(/[^a-z]/g, '').slice(0, 4);
-                event.target.value = value;
-                
-                // Sync with visual tile
-                tile.dataset.chars = value;
-                tile.dataset.cursorPos = value.length.toString();
-                updateYellowTileDisplay(i);
-            });
-            
-            input.addEventListener('focus', () => {
-                // Focus the visual tile too for consistent styling
-                if (!isMobile) {
-                    tile.focus();
-                }
-                updateYellowTileDisplay(i);
-            });
-            
-            input.addEventListener('blur', () => {
-                updateYellowTileDisplay(i);
-            });
-        }
-        
-        // Mobile-first touch handling
-        if (isMobile && input) {
-            // For mobile: prioritize hidden input
-            tile.addEventListener('touchstart', (event) => {
-                event.preventDefault();
-                input.focus();
-            }, { passive: false });
-            
-            tile.addEventListener('click', (event) => {
-                event.preventDefault();
-                input.focus();
-            });
-        } else {
-            // Desktop click handling with advanced cursor positioning
-            tile.addEventListener('click', (event) => {
-                const rect = tile.getBoundingClientRect();
-                const x = event.clientX - rect.left;
-                const y = event.clientY - rect.top;
-                
-                const col = x < rect.width / 2 ? 0 : 1;
-                const row = y < rect.height / 2 ? 0 : 1;
-                const gridPos = row * 2 + col;
-                
-                const currentChars = tile.dataset.chars || '';
-                tile.dataset.cursorPos = Math.min(gridPos, currentChars.length).toString();
-                updateYellowTileDisplay(i);
-            });
-        }
-        
-        tile.addEventListener('keydown', (event) => {
-            const currentChars = tile.dataset.chars || '';
-            const cursorPos = parseInt(tile.dataset.cursorPos || '0');
-            
-            event.preventDefault(); // Prevent all default behavior
-            
-            if (event.key === 'Backspace') {
-                if (cursorPos > 0) {
-                    // Delete character before cursor
-                    const newChars = currentChars.slice(0, cursorPos - 1) + currentChars.slice(cursorPos);
-                    tile.dataset.chars = newChars;
-                    tile.dataset.cursorPos = Math.max(0, cursorPos - 1).toString();
-                    updateYellowTileDisplay(i);
-                }
-            } else if (event.key === 'Delete') {
-                if (cursorPos < currentChars.length) {
-                    // Delete character at cursor
-                    const newChars = currentChars.slice(0, cursorPos) + currentChars.slice(cursorPos + 1);
-                    tile.dataset.chars = newChars;
-                    updateYellowTileDisplay(i);
-                }
-            } else if (event.key === 'ArrowLeft') {
-                // Move cursor left or to previous tile
-                if (cursorPos > 0) {
-                    tile.dataset.cursorPos = Math.max(0, cursorPos - 1).toString();
-                    updateYellowTileDisplay(i);
-                } else if (i > 0) {
-                    // Move to previous yellow tile
-                    const prevTile = document.getElementById(`yellow${i - 1}`);
-                    const prevChars = prevTile.dataset.chars || '';
-                    prevTile.dataset.cursorPos = prevChars.length.toString();
-                    prevTile.focus();
-                }
-            } else if (event.key === 'ArrowRight') {
-                // Move cursor right or to next tile
-                if (cursorPos < currentChars.length) {
-                    tile.dataset.cursorPos = Math.min(currentChars.length, cursorPos + 1).toString();
-                    updateYellowTileDisplay(i);
-                } else if (i < 4) {
-                    // Move to next yellow tile
-                    const nextTile = document.getElementById(`yellow${i + 1}`);
-                    nextTile.dataset.cursorPos = '0';
-                    nextTile.focus();
-                }
-            } else if (event.key === 'Home') {
-                // Move cursor to start
-                tile.dataset.cursorPos = '0';
-                updateYellowTileDisplay(i);
-            } else if (event.key === 'End') {
-                // Move cursor to end
-                tile.dataset.cursorPos = currentChars.length.toString();
-                updateYellowTileDisplay(i);
-            } else if (event.key === 'Tab') {
-                // Handle Tab navigation between tiles
-                if (event.shiftKey) {
-                    // Shift+Tab - go to previous tile
-                    if (i > 0) {
-                        const prevTile = document.getElementById(`yellow${i - 1}`);
-                        const prevChars = prevTile.dataset.chars || '';
-                        prevTile.dataset.cursorPos = prevChars.length.toString();
-                        prevTile.focus();
-                    } else {
-                        // Allow default tab behavior to move to previous focusable element
-                        event.preventDefault = false;
-                        return;
-                    }
-                } else {
-                    // Tab - go to next tile
-                    if (i < 4) {
-                        const nextTile = document.getElementById(`yellow${i + 1}`);
-                        nextTile.dataset.cursorPos = '0';
-                        nextTile.focus();
-                    } else {
-                        // Allow default tab behavior to move to next focusable element
-                        event.preventDefault = false;
-                        return;
-                    }
-                }
-            } else if (event.key.length === 1 && event.key.match(/[a-zA-Z]/)) {
-                // Insert character at cursor position
-                if (currentChars.length < 4) {
-                    const newChars = currentChars.slice(0, cursorPos) + event.key.toLowerCase() + currentChars.slice(cursorPos);
-                    tile.dataset.chars = newChars;
-                    tile.dataset.cursorPos = (cursorPos + 1).toString();
-                    // Sync with hidden input
-                    if (input) {
-                        input.value = newChars;
-                    }
-                    updateYellowTileDisplay(i);
-                }
-            }
-        });
-        
-        tile.addEventListener('paste', (event) => {
-            event.preventDefault();
-            const currentChars = tile.dataset.chars || '';
-            const cursorPos = parseInt(tile.dataset.cursorPos || '0');
-            
-            const paste = (event.clipboardData || window.clipboardData).getData('text');
-            const cleanPaste = paste.toLowerCase().replace(/[^a-z]/g, '');
-            
-            // Insert pasted text at cursor, respecting 4-character limit
-            const beforeCursor = currentChars.slice(0, cursorPos);
-            const afterCursor = currentChars.slice(cursorPos);
-            const newChars = (beforeCursor + cleanPaste + afterCursor).slice(0, 4);
-            
-            tile.dataset.chars = newChars;
-            tile.dataset.cursorPos = Math.min(cursorPos + cleanPaste.length, newChars.length).toString();
-            updateYellowTileDisplay(i);
-        });
-        
-        // Handle focus
-        tile.addEventListener('focus', () => {
-            // Set cursor to end if not already set
-            const currentChars = tile.dataset.chars || '';
-            if (!tile.dataset.cursorPos) {
-                tile.dataset.cursorPos = currentChars.length.toString();
-            }
-            updateYellowTileDisplay(i);
-        });
-        
-        // Handle blur
-        tile.addEventListener('blur', () => {
-            updateYellowTileDisplay(i);
-        });
-        
-        
-        // Initialize display
-        updateYellowTileDisplay(i);
-    }
-}
-
-// Initialize the page
 function initializeIndexPage() {
+    buildGrid();
+    document.addEventListener('keydown', onKeyDown);
+    document.getElementById('clearButton').addEventListener('click', () => {
+        clearGrid();
+        focusKeyboardProxy();
+    });
     loadWords();
-    setupTileHandlers();
-    setupYellowTileHandlers();
-    addEnterKeyHandler(searchWords);
 }
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', initializeIndexPage);
+// Exported for the Node test harness; harmless in the browser.
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { deriveConstraints, matchesConstraints, STATES };
+}
+
+if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', initializeIndexPage);
+}
