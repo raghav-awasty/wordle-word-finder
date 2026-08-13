@@ -308,7 +308,8 @@ function confirmedLetterAt(col, exceptRow) {
     return null;
 }
 
-function typeLetter(letter) {
+/** Place a letter at the cursor without re-rendering. */
+function placeLetter(letter) {
     // If this column is already confirmed green with this same letter, colour
     // it in rather than defaulting to grey. This is not just a keystroke saved:
     // a grey letter with no green or yellow twin in its own row means "absent
@@ -320,6 +321,10 @@ function typeLetter(letter) {
 
     guesses[cursor.row][cursor.col] = { letter, state };
     advanceCursor();
+}
+
+function typeLetter(letter) {
+    placeLetter(letter);
     update();
 }
 
@@ -366,10 +371,18 @@ function onKeyDown(event) {
 
     const key = event.key;
 
+    // When the proxy input holds focus, letters and Backspace arrive as `input`
+    // events instead (see onProxyInput) -- handling them here as well would
+    // apply every keystroke twice. Soft keyboards frequently report `key` as
+    // "Unidentified" anyway, which is why input events are the primary path.
+    const viaProxy = document.activeElement === getProxy();
+
     if (/^[a-zA-Z]$/.test(key)) {
+        if (viaProxy) return;
         event.preventDefault();
         typeLetter(key.toLowerCase());
     } else if (key === 'Backspace') {
+        if (viaProxy) return;
         event.preventDefault();
         handleBackspace();
     } else if (key === 'ArrowLeft') {
@@ -412,13 +425,63 @@ function update() {
     runSearch();
 }
 
-// The proxy input exists purely to summon the on-screen keyboard on mobile.
-// It is never read from -- keystrokes are handled by the document listener.
+// ---------------------------------------------------------------------------
+// Keyboard proxy
+//
+// Character entry is driven by `input` events on a hidden text field rather
+// than by keydown. Android soft keyboards report keydown as "Unidentified"
+// (keyCode 229) for ordinary letters, so a keydown-only path simply never sees
+// them. Reading what actually landed in the field works on every platform.
+//
+// The field is kept holding a single sentinel character: if it comes back
+// empty, the user pressed Backspace. Without the sentinel, Android often emits
+// no event at all for Backspace on an already-empty field.
+// ---------------------------------------------------------------------------
+
+const PROXY_SENTINEL = ' ';
+
+function getProxy() {
+    return document.getElementById('keyboardProxy');
+}
+
+function resetProxy() {
+    const proxy = getProxy();
+    if (proxy) proxy.value = PROXY_SENTINEL;
+}
+
 function focusKeyboardProxy() {
-    const proxy = document.getElementById('keyboardProxy');
-    if (proxy && document.activeElement !== proxy) {
+    const proxy = getProxy();
+    if (!proxy) return;
+    if (document.activeElement !== proxy) {
         proxy.focus({ preventScroll: true });
     }
+    resetProxy();
+}
+
+function onProxyInput() {
+    const proxy = getProxy();
+    if (!proxy) return;
+
+    const value = proxy.value;
+
+    if (value === '') {
+        // Sentinel deleted -- that was a Backspace.
+        handleBackspace();
+        resetProxy();
+        return;
+    }
+
+    const typed = value.split(PROXY_SENTINEL).join('').toLowerCase().replace(/[^a-z]/g, '');
+
+    if (typed) {
+        // Place them all, then render once.
+        for (const letter of typed) {
+            placeLetter(letter);
+        }
+        update();
+    }
+
+    resetProxy();
 }
 
 // ---------------------------------------------------------------------------
@@ -544,11 +607,44 @@ function createDistributionBars(distribution, total) {
 
 function initializeIndexPage() {
     buildGrid();
+
+    const proxy = getProxy();
+    if (proxy) {
+        proxy.addEventListener('input', onProxyInput);
+        // Some keyboards fire only beforeinput for deletions.
+        proxy.addEventListener('beforeinput', event => {
+            if (event.inputType === 'deleteContentBackward' && proxy.value === '') {
+                event.preventDefault();
+                handleBackspace();
+                resetProxy();
+            }
+        });
+        // If focus is lost to a tap elsewhere, take it back so typing keeps
+        // working without another tap on the grid.
+        proxy.addEventListener('blur', () => {
+            setTimeout(() => {
+                if (document.activeElement === document.body) focusKeyboardProxy();
+            }, 0);
+        });
+        resetProxy();
+    }
+
     document.addEventListener('keydown', onKeyDown);
+
     document.getElementById('clearButton').addEventListener('click', () => {
         clearGrid();
         focusKeyboardProxy();
     });
+
+    // Tapping anywhere on the board area should raise the keyboard, including
+    // the gaps between tiles.
+    const wrap = document.querySelector('.grid-wrap');
+    if (wrap) wrap.addEventListener('click', focusKeyboardProxy);
+
+    // Desktop can start typing immediately; mobile browsers ignore this until
+    // a real user gesture, which is what the grid tap provides.
+    focusKeyboardProxy();
+
     loadWords();
 }
 

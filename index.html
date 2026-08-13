@@ -28,12 +28,17 @@
 
   <p class="grid-hint">Type your guesses, then tap each tile to set its colour.</p>
 
-  <!-- Guess grid is built by index.js so the markup stays in one place. -->
-  <div id="guessGrid" class="guess-grid" role="group" aria-label="Wordle guesses"></div>
+  <!-- The proxy input must sit ON SCREEN and overlap the grid: iOS refuses to
+       open the keyboard for an element parked off-viewport. It is invisible and
+       ignores pointer events, so taps still land on the tiles beneath it. -->
+  <div class="grid-wrap">
+    <!-- Guess grid is built by index.js so the markup stays in one place. -->
+    <div id="guessGrid" class="guess-grid" role="group" aria-label="Wordle guesses"></div>
+    <input type="text" id="keyboardProxy" class="keyboard-proxy" autocomplete="off"
+           autocorrect="off" autocapitalize="none" spellcheck="false"
+           inputmode="text" aria-label="Type your guess">
 
-  <!-- Off-screen input: gives mobile browsers a keyboard to attach to. -->
-  <input type="text" id="keyboardProxy" class="keyboard-proxy" autocomplete="off"
-         autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1">
+  </div>
 
   <div class="grid-actions">
     <button type="button" id="clearButton">Clear</button>

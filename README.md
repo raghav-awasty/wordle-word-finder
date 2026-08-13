@@ -1,4 +1,4 @@
-# Wordle Word Finder 🔤🟩🟨
+# Wordle Word Finder 🟩🟨⬛
 
 _Inspired by my daily struggle to find wordle words_ ¯\\_(ツ)_/¯
 
@@ -6,11 +6,10 @@ A minimal web-based tool to help you find all valid 5-letter English words that 
 
 ## 🔍 Features
 
-- **A real Wordle board** — type your guesses into a 6×5 grid and tap each tile to set its colour, exactly as the game shows it
+- **A real Wordle board** - type your guesses into a 6×5 grid and tap each tile to set its colour, exactly as the game shows it
 - Results filter **live** as you type and recolour, ranked by how common each word is
-- **Correct handling of repeated letters** — because guesses are recorded row by row, the solver can tell "two E's in one guess" (the answer has at least two) apart from "an E in two different guesses" (it has at least one)
-- 🗂️ **Word History** — past “Word of the Day” entries on a calendar, with current and longest streaks
-- 📬 **Submit Page** — submit a new word and trigger GitHub Actions to update the history
+- 🗂️ **Word History** - past “Word of the Day” entries on a calendar, with current and longest streaks
+- 📬 **Submit Page** - submit a new word and trigger GitHub Actions to update the history
 
 ## 🛠️ How It Works
 
@@ -21,7 +20,7 @@ A minimal web-based tool to help you find all valid 5-letter English words that 
   - ⬛ grey → if the same letter is green or yellow elsewhere in the row, the answer holds *exactly* that many of it; otherwise the letter is absent entirely
 - Constraints from all rows are combined, and the word list is filtered against them in the browser.
 
-## 🕹 Usage
+## 🕹️ Usage
 
 1. Type a guess you have already played into a row.
 2. Click (or tap) each tile to cycle it grey → yellow → green to match what Wordle showed you.
@@ -45,7 +44,7 @@ Keyboard: letters type, **Backspace** deletes, **arrow keys** move, **Space** re
 
 ### ✍️ Submitting the Word of the Day
 
-No tokens or secrets needed in the browser — submission goes through a GitHub issue, so GitHub handles authentication.
+No tokens or secrets needed in the browser. Submission goes through a GitHub issue, so GitHub handles authentication.
 
 1. Enter the day's word on `/submit.html` and hit **Enter** (or click **Submit**).
 2. A pre-filled GitHub issue titled `WOTD: WORD` opens in a new tab. Click **Create**.
