@@ -231,6 +231,45 @@ function renderGrid() {
     });
 }
 
+/**
+ * Keep a confirmed column consistent across every row that plays that letter.
+ *
+ * Green is a fact about the board rather than about one guess, so a grey or
+ * yellow copy of a confirmed letter in the same column is a contradiction: both
+ * of those states mean "not here", which cancels the green and silently empties
+ * the results. Setting one green sets its twins; clearing it clears them.
+ */
+function propagateGreen(col, letter, becameCorrect) {
+    for (let row = 0; row < ROWS; row++) {
+        const cell = guesses[row][col];
+        if (cell.letter !== letter) continue;
+
+        if (becameCorrect) {
+            cell.state = 'correct';
+        } else if (cell.state === 'correct') {
+            cell.state = 'absent';
+        }
+    }
+}
+
+/** Single funnel for recolouring, so click and keyboard behave identically. */
+function setTileState(row, col, newState) {
+    const cell = guesses[row][col];
+    if (!cell.letter) return;
+
+    const wasCorrect = cell.state === 'correct';
+    cell.state = newState;
+
+    if (newState === 'correct' || wasCorrect) {
+        propagateGreen(col, cell.letter, newState === 'correct');
+    }
+}
+
+function nextState(state, direction) {
+    const offset = direction === 'back' ? STATES.length - 1 : 1;
+    return STATES[(STATES.indexOf(state) + offset) % STATES.length];
+}
+
 function onGridClick(event) {
     const tile = event.target.closest('.guess-tile');
     if (!tile) return;
@@ -241,8 +280,7 @@ function onGridClick(event) {
 
     if (cell.letter) {
         // Filled tile: cycle its colour.
-        const next = (STATES.indexOf(cell.state) + 1) % STATES.length;
-        cell.state = STATES[next];
+        setTileState(row, col, nextState(cell.state, 'forward'));
         update();
     } else {
         // Empty tile: move the typing cursor here.
@@ -253,8 +291,34 @@ function onGridClick(event) {
     focusKeyboardProxy();
 }
 
+/**
+ * The letter confirmed green at a column by some OTHER row, or null.
+ *
+ * Once a position is pinned down it stays pinned for the rest of the game, so
+ * later guesses reuse it. Returning it here lets typing pre-colour the tile.
+ */
+function confirmedLetterAt(col, exceptRow) {
+    for (let row = 0; row < ROWS; row++) {
+        if (row === exceptRow) continue;
+        const cell = guesses[row][col];
+        if (cell.letter && cell.state === 'correct') {
+            return cell.letter;
+        }
+    }
+    return null;
+}
+
 function typeLetter(letter) {
-    guesses[cursor.row][cursor.col] = { letter, state: 'absent' };
+    // If this column is already confirmed green with this same letter, colour
+    // it in rather than defaulting to grey. This is not just a keystroke saved:
+    // a grey letter with no green or yellow twin in its own row means "absent
+    // from the answer entirely", which would contradict the existing green and
+    // silently empty the results list.
+    const state = confirmedLetterAt(cursor.col, cursor.row) === letter
+        ? 'correct'
+        : 'absent';
+
+    guesses[cursor.row][cursor.col] = { letter, state };
     advanceCursor();
     update();
 }
@@ -293,8 +357,7 @@ function handleBackspace() {
 function cycleCurrentTile(direction) {
     const cell = guesses[cursor.row][cursor.col];
     if (!cell.letter) return;
-    const offset = direction === 'back' ? STATES.length - 1 : 1;
-    cell.state = STATES[(STATES.indexOf(cell.state) + offset) % STATES.length];
+    setTileState(cursor.row, cursor.col, nextState(cell.state, direction));
     update();
 }
 
@@ -491,7 +554,7 @@ function initializeIndexPage() {
 
 // Exported for the Node test harness; harmless in the browser.
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { deriveConstraints, matchesConstraints, STATES };
+    module.exports = { deriveConstraints, matchesConstraints, confirmedLetterAt, STATES };
 }
 
 if (typeof document !== 'undefined') {

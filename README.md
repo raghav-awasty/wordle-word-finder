@@ -27,6 +27,8 @@ A minimal web-based tool to help you find all valid 5-letter English words that 
 2. Click (or tap) each tile to cycle it grey → yellow → green to match what Wordle showed you.
 3. Matching words appear immediately, most common first. Add another guess to narrow further.
 
+Once a position is confirmed green, typing that same letter there again in a later row colours it green for you. Click it if you ever need to change it back.
+
 Keyboard: letters type, **Backspace** deletes, **arrow keys** move, **Space** recolours the tile under the cursor (**Shift+Space** cycles backwards).
 
 ## 🌐 Pages
