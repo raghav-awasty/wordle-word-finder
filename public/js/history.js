@@ -4,100 +4,57 @@ let wordsData = [];
 let today = new Date();
 
 // Streak calculation functions
+//
+// All streak maths runs on whole-day indices (see DateUtils.toDayIndex) rather
+// than millisecond deltas, so DST transitions cannot shift a day boundary.
 function calculateCurrentStreak(wordsData) {
     if (wordsData.length === 0) return 0;
-    
-    // Sort words by date (most recent first)
-    const sortedWords = wordsData.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
-    
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    const todayStr = formatDateString(today);
-    const yesterdayStr = formatDateString(yesterday);
-    
-    // Check if we have today's entry
-    const hasTodayEntry = sortedWords.some(word => 
-        formatDateString(word.date) === todayStr
-    );
-    
-    // Check if we have yesterday's entry
-    const hasYesterdayEntry = sortedWords.some(word => 
-        formatDateString(word.date) === yesterdayStr
-    );
-    
-    let currentStreak = 0;
-    let checkDate;
-    
-    if (hasTodayEntry) {
-        // Start counting from today
-        checkDate = new Date(today);
-    } else if (hasYesterdayEntry) {
-        // Today's missing but yesterday exists, start from yesterday
-        checkDate = new Date(yesterday);
+
+    const dayIndices = new Set(wordsData.map(word => DateUtils.toDayIndex(word.date)));
+
+    const todayIndex = DateUtils.toDayIndex(new Date());
+
+    // A streak stays alive if today's word is in, or if today is simply not
+    // recorded yet and yesterday's is.
+    let checkIndex;
+    if (dayIndices.has(todayIndex)) {
+        checkIndex = todayIndex;
+    } else if (dayIndices.has(todayIndex - 1)) {
+        checkIndex = todayIndex - 1;
     } else {
-        // Both today and yesterday are missing - streak is broken
         return 0;
     }
-    
-    // Count consecutive days backwards
-    while (true) {
-        const checkDateStr = formatDateString(checkDate);
-        const hasWordForDate = sortedWords.some(word => 
-            formatDateString(word.date) === checkDateStr
-        );
-        
-        if (hasWordForDate) {
-            currentStreak++;
-            // Move to previous day
-            checkDate.setDate(checkDate.getDate() - 1);
-        } else {
-            // Streak is broken
-            break;
-        }
+
+    let currentStreak = 0;
+    while (dayIndices.has(checkIndex)) {
+        currentStreak++;
+        checkIndex--;
     }
-    
+
     return currentStreak;
 }
 
 function calculateLongestStreak(wordsData) {
     if (wordsData.length === 0) return 0;
-    
-    // Sort words by date (oldest first)
-    const sortedWords = wordsData.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
-    
+
+    // De-duplicate to day indices and sort ascending, so repeated entries for a
+    // single date cannot inflate a streak.
+    const dayIndices = [...new Set(wordsData.map(word => DateUtils.toDayIndex(word.date)))]
+        .sort((a, b) => a - b);
+
     let longestStreak = 1;
     let currentStreak = 1;
-    
-    for (let i = 1; i < sortedWords.length; i++) {
-        const prevDate = new Date(sortedWords[i - 1].date);
-        const currDate = new Date(sortedWords[i].date);
-        
-        // Calculate the difference in days
-        const daysDiff = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
-        
-        if (daysDiff === 1) {
-            // Consecutive day - increment current streak
+
+    for (let i = 1; i < dayIndices.length; i++) {
+        if (dayIndices[i] - dayIndices[i - 1] === 1) {
             currentStreak++;
         } else {
-            // Gap in dates - reset current streak
-            longestStreak = Math.max(longestStreak, currentStreak);
             currentStreak = 1;
         }
+        longestStreak = Math.max(longestStreak, currentStreak);
     }
-    
-    // Don't forget to check the final streak
-    longestStreak = Math.max(longestStreak, currentStreak);
-    
-    return longestStreak;
-}
 
-function formatDateString(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return longestStreak;
 }
 
 function updateStreakDisplay(currentStreak, longestStreak) {
@@ -406,7 +363,7 @@ async function loadHistory() {
     try {
         const history = await DataLoader.loadJSON('../data/word_otd.json');
         wordsData = history.map(entry => ({
-            date: new Date(entry.date),
+            date: DateUtils.parseLocal(entry.date),
             word: entry.word,
             definition: entry.definition
         }));
