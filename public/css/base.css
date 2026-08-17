@@ -98,6 +98,8 @@ button:hover {
 .nav-buttons {
     display: flex;
     justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
     gap: 1rem;
     margin-bottom: 2rem;
 }
@@ -127,19 +129,26 @@ a:hover {
     text-decoration: underline;
 }
 
-.back-link {
-    display: block;
-    text-align: center;
-    margin-top: 2rem;
-    color: var(--primary-green);
-    text-decoration: none;
+/* Streak badge, shown alongside the nav on the finder. */
+.nav-streak {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.5rem 0.85rem;
+    border-radius: var(--border-radius-small);
+    background-color: var(--bg-secondary);
+    color: var(--text-gray);
     font-weight: 600;
-    transition: color 0.2s ease;
+    font-size: 0.95rem;
+    white-space: nowrap;
 }
 
-.back-link:hover {
-    color: var(--primary-green-light);
-    text-decoration: underline;
+.nav-streak[hidden] {
+    display: none;
+}
+
+.nav-streak .streak-count {
+    color: var(--primary-yellow);
 }
 
 

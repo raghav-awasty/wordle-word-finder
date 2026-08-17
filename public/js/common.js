@@ -49,6 +49,72 @@ function showStatus(message, type = 'info') {
     }
 }
 
+// Word of the Day history
+//
+// Shared by the history calendar, the streak badge on the finder, and the
+// submit page's duplicate checks. Dates are parsed as local calendar dates and
+// all arithmetic runs on whole-day indices -- see DateUtils.
+const WordHistory = {
+    load: async function(url) {
+        const raw = await DataLoader.loadJSON(url);
+        return raw.map(entry => ({
+            date: DateUtils.parseLocal(entry.date),
+            word: entry.word,
+            definition: entry.definition
+        }));
+    },
+
+    currentStreak: function(entries) {
+        if (!entries.length) return 0;
+
+        const days = new Set(entries.map(entry => DateUtils.toDayIndex(entry.date)));
+        const today = DateUtils.toDayIndex(new Date());
+
+        // A streak survives today not being recorded yet, as long as yesterday
+        // is; it only breaks once both are missing.
+        let cursor;
+        if (days.has(today)) {
+            cursor = today;
+        } else if (days.has(today - 1)) {
+            cursor = today - 1;
+        } else {
+            return 0;
+        }
+
+        let streak = 0;
+        while (days.has(cursor)) {
+            streak++;
+            cursor--;
+        }
+        return streak;
+    },
+
+    longestStreak: function(entries) {
+        if (!entries.length) return 0;
+
+        const days = [...new Set(entries.map(entry => DateUtils.toDayIndex(entry.date)))]
+            .sort((a, b) => a - b);
+
+        let longest = 1;
+        let run = 1;
+        for (let i = 1; i < days.length; i++) {
+            run = days[i] - days[i - 1] === 1 ? run + 1 : 1;
+            longest = Math.max(longest, run);
+        }
+        return longest;
+    },
+
+    entryForToday: function(entries) {
+        const today = DateUtils.toDayIndex(new Date());
+        return entries.find(entry => DateUtils.toDayIndex(entry.date) === today) || null;
+    },
+
+    findWord: function(entries, word) {
+        const needle = String(word).toLowerCase();
+        return entries.find(entry => entry.word.toLowerCase() === needle) || null;
+    }
+};
+
 // Word submission
 //
 // Submitting opens a pre-filled GitHub issue rather than calling the API, so

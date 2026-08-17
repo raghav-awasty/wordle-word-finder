@@ -500,11 +500,13 @@ let selectedWord = null;
 
 function selectWord(word) {
     selectedWord = word;
+    submittedWord = null;
     renderSelection();
 }
 
 function clearSelection() {
     selectedWord = null;
+    submittedWord = null;
     renderSelection();
 }
 
@@ -520,6 +522,7 @@ function renderSelection() {
     const chips = [...document.querySelectorAll('.word')];
     if (selectedWord && !chips.some(chip => chip.dataset.word === selectedWord)) {
         selectedWord = null;
+        submittedWord = null;
     }
 
     chips.forEach(chip => {
@@ -529,13 +532,26 @@ function renderSelection() {
     });
 
     if (selectedWord) {
-        action.textContent = `Submit ${selectedWord.toUpperCase()} as today's word`;
+        const isSubmitted = submittedWord === selectedWord;
+        action.textContent = isSubmitted
+            ? `${selectedWord.toUpperCase()} sent \u2014 create the issue in the new tab`
+            : `Submit ${selectedWord.toUpperCase()} as today's word`;
+        bar.classList.toggle('submitted', isSubmitted);
         bar.hidden = false;
         document.body.classList.add('bar-visible');
     } else {
         bar.hidden = true;
         document.body.classList.remove('bar-visible');
     }
+}
+
+// Set once a submission has been opened, so the bar can acknowledge it. Reset
+// whenever the selection changes.
+let submittedWord = null;
+
+function markSubmitted(word) {
+    submittedWord = word;
+    renderSelection();
 }
 
 function onResultsClick(event) {
@@ -547,6 +563,27 @@ function onResultsClick(event) {
         clearSelection();
     } else {
         selectWord(chip.dataset.word);
+    }
+}
+
+// The streak is the reason the daily ritual sticks, but it only lived on the
+// history page. Surface it where the day actually starts. Failure is silent --
+// the finder must work whether or not the history loads.
+async function showStreakBadge() {
+    const badge = document.getElementById('navStreak');
+    if (!badge) return;
+
+    try {
+        const history = await WordHistory.load('data/word_otd.json');
+        const streak = WordHistory.currentStreak(history);
+        if (streak <= 0) return;
+
+        badge.innerHTML =
+            `🔥 <span class="streak-count">${streak}</span> day${streak === 1 ? '' : 's'}`;
+        badge.title = `Current Word of the Day streak: ${streak} day${streak === 1 ? '' : 's'}`;
+        badge.hidden = false;
+    } catch (error) {
+        console.error('Could not load word history for the streak badge:', error);
     }
 }
 
@@ -729,7 +766,12 @@ function initializeIndexPage() {
     const submitSelected = document.getElementById('submitSelected');
     if (submitSelected) {
         submitSelected.addEventListener('click', () => {
-            if (selectedWord) openWordSubmission(selectedWord);
+            if (!selectedWord) return;
+            const word = selectedWord;
+            openWordSubmission(word);
+            // The issue opens in a new tab, so without this the bar looks
+            // exactly as it did before the tap.
+            markSubmitted(word);
         });
     }
 
@@ -743,6 +785,7 @@ function initializeIndexPage() {
     focusKeyboardProxy();
 
     loadWords();
+    showStreakBadge();
 }
 
 // Exported for the Node test harness; harmless in the browser.

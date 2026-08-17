@@ -3,59 +3,8 @@
 let wordsData = [];
 let today = new Date();
 
-// Streak calculation functions
-//
-// All streak maths runs on whole-day indices (see DateUtils.toDayIndex) rather
-// than millisecond deltas, so DST transitions cannot shift a day boundary.
-function calculateCurrentStreak(wordsData) {
-    if (wordsData.length === 0) return 0;
-
-    const dayIndices = new Set(wordsData.map(word => DateUtils.toDayIndex(word.date)));
-
-    const todayIndex = DateUtils.toDayIndex(new Date());
-
-    // A streak stays alive if today's word is in, or if today is simply not
-    // recorded yet and yesterday's is.
-    let checkIndex;
-    if (dayIndices.has(todayIndex)) {
-        checkIndex = todayIndex;
-    } else if (dayIndices.has(todayIndex - 1)) {
-        checkIndex = todayIndex - 1;
-    } else {
-        return 0;
-    }
-
-    let currentStreak = 0;
-    while (dayIndices.has(checkIndex)) {
-        currentStreak++;
-        checkIndex--;
-    }
-
-    return currentStreak;
-}
-
-function calculateLongestStreak(wordsData) {
-    if (wordsData.length === 0) return 0;
-
-    // De-duplicate to day indices and sort ascending, so repeated entries for a
-    // single date cannot inflate a streak.
-    const dayIndices = [...new Set(wordsData.map(word => DateUtils.toDayIndex(word.date)))]
-        .sort((a, b) => a - b);
-
-    let longestStreak = 1;
-    let currentStreak = 1;
-
-    for (let i = 1; i < dayIndices.length; i++) {
-        if (dayIndices[i] - dayIndices[i - 1] === 1) {
-            currentStreak++;
-        } else {
-            currentStreak = 1;
-        }
-        longestStreak = Math.max(longestStreak, currentStreak);
-    }
-
-    return longestStreak;
-}
+// Streak maths lives in common.js (WordHistory) so the finder's streak badge
+// and this page cannot drift apart.
 
 function updateStreakDisplay(currentStreak, longestStreak) {
     const currentStreakEl = document.getElementById('current-streak');
@@ -361,16 +310,11 @@ Calendar.prototype.prevMonth = function() {
 // Load word history data and initialize calendar
 async function loadHistory() {
     try {
-        const history = await DataLoader.loadJSON('../data/word_otd.json');
-        wordsData = history.map(entry => ({
-            date: DateUtils.parseLocal(entry.date),
-            word: entry.word,
-            definition: entry.definition
-        }));
+        wordsData = await WordHistory.load('../data/word_otd.json');
 
         // Calculate streaks
-        const currentStreak = calculateCurrentStreak(wordsData);
-        const longestStreak = calculateLongestStreak(wordsData);
+        const currentStreak = WordHistory.currentStreak(wordsData);
+        const longestStreak = WordHistory.longestStreak(wordsData);
         
         // Update streak display
         updateStreakDisplay(currentStreak, longestStreak);

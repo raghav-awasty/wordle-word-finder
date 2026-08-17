@@ -19,19 +19,19 @@
     <link rel="stylesheet" href="../public/css/submit.css">
 </head>
 <body>
+    <div class="nav-buttons">
+        <a href="../index.html">🔤 Word Finder</a>
+        <a href="history.html">📜 Word History</a>
+    </div>
+
     <h1>Submit Word of the Day</h1>
 
     <label for="word">Today's 5-Letter Word:</label>
     <input type="text" id="word" name="word" maxlength="5" pattern="[a-zA-Z]{5}" required>
 
-    <button onclick="submitWordViaIssue()">Submit Word</button>
+    <button type="button" id="submitButton">Submit Word</button>
 
     <div id="status"></div>
-
-    <a href="../index.html" class="back-link">
-        <img src="../public/favicon.svg" alt="Wordle Finder" width="16" height="16" style="vertical-align: middle; margin-right: 6px;">
-        Back to Wordle Finder
-    </a>
 
     <!-- Scripts -->
     <script src="../public/js/common.js"></script>

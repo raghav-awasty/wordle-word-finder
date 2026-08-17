@@ -144,6 +144,21 @@ h1 {
     display: none;
 }
 
+/* Acknowledges that the issue tab was opened. */
+.submit-bar.submitted,
+.submit-bar.submitted .submit-bar-action {
+    background-color: var(--bg-secondary);
+}
+
+.submit-bar.submitted .submit-bar-action {
+    color: var(--text-gray);
+    font-weight: 500;
+}
+
+.submit-bar.submitted .submit-bar-action:hover {
+    background-color: var(--bg-input);
+}
+
 .submit-bar-action {
     flex: 1;
     margin: 0;
