@@ -10,6 +10,7 @@ A minimal web-based tool to help you find all valid 5-letter English words that 
 - Results filter **live** as you type and recolour, ranked by how common each word is
 - 🗂️ **Word History** - past “Word of the Day” entries on a calendar, with current and longest streaks
 - 📬 **Submit Page** - submit a new word and trigger GitHub Actions to update the history
+- ⚡ **Tap to submit** - once the results narrow to the answer, tap that word to submit it straight from the finder, without a detour to the submit page
 
 ## 🛠️ How It Works
 
@@ -46,14 +47,20 @@ Keyboard: letters type, **Backspace** deletes, **arrow keys** move, **Space** re
 
 No tokens or secrets needed in the browser. Submission goes through a GitHub issue, so GitHub handles authentication.
 
-1. Enter the day's word on `/submit.html` and hit **Enter** (or click **Submit**).
-2. A pre-filled GitHub issue titled `WOTD: WORD` opens in a new tab. Click **Create**.
-3. The [`process_word_submission`](.github/workflows/process_word_submission.yml) workflow fires on issue creation and runs [`scripts/update_word_otd.py`](scripts/update_word_otd.py), which:
+There are two ways in, both ending at the same pre-filled issue:
+
+- **From the finder** — when the results narrow to the answer, tap that word. It highlights and a bar appears offering to submit it. Quickest route on the days you used the finder to get there.
+- **From the submit page** — type the word directly on `/src/submit.html`. The route to use when you solved it unaided, and the one the daily reminder email links to.
+
+Then:
+
+1. A pre-filled GitHub issue titled `WOTD: WORD` opens in a new tab. Click **Create**.
+2. The [`process_word_submission`](.github/workflows/process_word_submission.yml) workflow fires on issue creation and runs [`scripts/update_word_otd.py`](scripts/update_word_otd.py), which:
    * validates the word is 5 letters and present in `valid_words_frequencies.csv`,
    * rejects it if it has already been used,
    * fetches a definition from [dictionaryapi.dev](https://dictionaryapi.dev), falling back to [Datamuse](https://api.datamuse.com) if that has no entry,
    * appends the entry to `data/word_otd.json` and commits it.
-4. The bot comments the result on the issue and closes it on success.
+3. The bot comments the result on the issue and closes it on success.
 
 A scheduled [`daily_reminder`](.github/workflows/daily_reminder.yml) workflow emails a nudge each morning with links to play, to the finder, and to the submit page. It needs two repository secrets, `MAIL_USERNAME` and `MAIL_PASSWORD` (a Gmail [app password](https://support.google.com/accounts/answer/185833)).
 
