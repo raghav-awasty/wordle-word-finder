@@ -46,6 +46,13 @@
 
   <div id="results"></div>
 
+  <!-- Revealed when a result chip is tapped; submits that word straight to
+       the Word of the Day workflow without a trip to the submit page. -->
+  <div id="submitBar" class="submit-bar" hidden>
+    <button type="button" id="submitSelected" class="submit-bar-action"></button>
+    <button type="button" id="submitDismiss" class="submit-bar-dismiss" aria-label="Dismiss">&times;</button>
+  </div>
+
   <!-- Scripts -->
   <script src="public/js/common.js"></script>
   <script src="public/js/index.js"></script>

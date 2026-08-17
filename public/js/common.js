@@ -49,6 +49,27 @@ function showStatus(message, type = 'info') {
     }
 }
 
+// Word submission
+//
+// Submitting opens a pre-filled GitHub issue rather than calling the API, so
+// GitHub handles authentication and no token is needed in the browser. Shared
+// by the submit page and the tap-to-submit bar on the finder.
+function buildWordSubmissionUrl(word) {
+    const upper = word.toUpperCase();
+    const title = `WOTD: ${upper}`;
+    const body = `Automated submission for Word of the Day: **${upper}**\n\n` +
+        `Submitted on: ${new Date().toLocaleDateString()}`;
+
+    return `https://github.com/${GITHUB_USERNAME}/${GITHUB_REPO}/issues/new?` +
+        `title=${encodeURIComponent(title)}&` +
+        `body=${encodeURIComponent(body)}&` +
+        `labels=word-submission`;
+}
+
+function openWordSubmission(word) {
+    window.open(buildWordSubmissionUrl(word), '_blank', 'noopener');
+}
+
 // Date utility functions
 const DateUtils = {
     sameDay: function(date1, date2) {

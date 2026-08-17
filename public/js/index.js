@@ -171,6 +171,7 @@ function runSearch() {
     if (!constraints.hasAnyConstraint) {
         document.getElementById('results').innerHTML =
             '<div class="no-results">Enter a guess above to filter the word list.</div>';
+        renderSelection();
         return;
     }
 
@@ -369,6 +370,10 @@ function cycleCurrentTile(direction) {
 function onKeyDown(event) {
     if (event.metaKey || event.ctrlKey || event.altKey) return;
 
+    // Focus is inside the results list -- Enter/Space belong to the chip the
+    // user is on, not to the tile under the grid cursor.
+    if (event.target.closest && event.target.closest('#results')) return;
+
     const key = event.key;
 
     // When the proxy input holds focus, letters and Backspace arrive as `input`
@@ -485,6 +490,76 @@ function onProxyInput() {
 }
 
 // ---------------------------------------------------------------------------
+// Tap to submit
+//
+// Once the answer is down to a word you recognise, tapping it offers to submit
+// it as the Word of the Day, saving a trip to the submit page.
+// ---------------------------------------------------------------------------
+
+let selectedWord = null;
+
+function selectWord(word) {
+    selectedWord = word;
+    renderSelection();
+}
+
+function clearSelection() {
+    selectedWord = null;
+    renderSelection();
+}
+
+function renderSelection() {
+    const bar = document.getElementById('submitBar');
+    const action = document.getElementById('submitSelected');
+    if (!bar || !action) return;
+
+    // Results are re-rendered on every keystroke. If the selected word no
+    // longer survives the current constraints its chip is gone, so drop the
+    // selection rather than offering to submit a word that is no longer a
+    // candidate.
+    const chips = [...document.querySelectorAll('.word')];
+    if (selectedWord && !chips.some(chip => chip.dataset.word === selectedWord)) {
+        selectedWord = null;
+    }
+
+    chips.forEach(chip => {
+        const isSelected = chip.dataset.word === selectedWord;
+        chip.classList.toggle('selected', isSelected);
+        chip.setAttribute('aria-pressed', String(isSelected));
+    });
+
+    if (selectedWord) {
+        action.textContent = `Submit ${selectedWord.toUpperCase()} as today's word`;
+        bar.hidden = false;
+        document.body.classList.add('bar-visible');
+    } else {
+        bar.hidden = true;
+        document.body.classList.remove('bar-visible');
+    }
+}
+
+function onResultsClick(event) {
+    const chip = event.target.closest('.word');
+    if (!chip || !chip.dataset.word) return;
+
+    // Tapping the selected chip again deselects it.
+    if (chip.dataset.word === selectedWord) {
+        clearSelection();
+    } else {
+        selectWord(chip.dataset.word);
+    }
+}
+
+function onResultsKeyDown(event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const chip = event.target.closest('.word');
+    if (!chip || !chip.dataset.word) return;
+    event.preventDefault();
+    event.stopPropagation();
+    onResultsClick(event);
+}
+
+// ---------------------------------------------------------------------------
 // Results
 // ---------------------------------------------------------------------------
 
@@ -493,6 +568,7 @@ function displayResults(results) {
 
     if (results.length === 0) {
         resultsContainer.innerHTML = '<div class="no-results">No matching words found.</div>';
+        renderSelection();
         return;
     }
 
@@ -535,7 +611,7 @@ function displayResults(results) {
             const relativeFreqText = getRelativeFrequencyText(wordObj.frequency, avgFreq);
             const tooltip = `Frequency: ${wordObj.frequency.toFixed(1)} (${relativeFreqText})`;
 
-            return `<div class="word ${frequencyTier}" title="${tooltip}">
+            return `<div class="word ${frequencyTier}" title="${tooltip}" data-word="${wordObj.word}" role="button" tabindex="0" aria-pressed="false">
                 <div class="word-content">
                     ${rankDisplay}
                     <span class="word-text">${wordObj.word.toUpperCase()}</span>
@@ -552,6 +628,8 @@ function displayResults(results) {
 
     resultsContainer.innerHTML =
         resultsHeader + '<div class="results-grid">' + resultsHtml + '</div>' + footer;
+
+    renderSelection();
 }
 
 function getFrequencyTier(frequency, maxFreq, minFreq) {
@@ -640,6 +718,25 @@ function initializeIndexPage() {
     // the gaps between tiles.
     const wrap = document.querySelector('.grid-wrap');
     if (wrap) wrap.addEventListener('click', focusKeyboardProxy);
+
+    // Tap a result chip to select it, then submit from the bar.
+    const results = document.getElementById('results');
+    if (results) {
+        results.addEventListener('click', onResultsClick);
+        results.addEventListener('keydown', onResultsKeyDown);
+    }
+
+    const submitSelected = document.getElementById('submitSelected');
+    if (submitSelected) {
+        submitSelected.addEventListener('click', () => {
+            if (selectedWord) openWordSubmission(selectedWord);
+        });
+    }
+
+    const submitDismiss = document.getElementById('submitDismiss');
+    if (submitDismiss) {
+        submitDismiss.addEventListener('click', clearSelection);
+    }
 
     // Desktop can start typing immediately; mobile browsers ignore this until
     // a real user gesture, which is what the grid tap provides.

@@ -8,18 +8,9 @@ function submitWordViaIssue() {
         return;
     }
 
-    // Create pre-filled GitHub issue URL and open it directly
-    const issueTitle = `WOTD: ${word}`;
-    const issueBody = `Automated submission for Word of the Day: **${word}**\n\nSubmitted on: ${new Date().toLocaleDateString()}`;
-    
-    const issueUrl = `https://github.com/${GITHUB_USERNAME}/${GITHUB_REPO}/issues/new?` +
-        `title=${encodeURIComponent(issueTitle)}&` +
-        `body=${encodeURIComponent(issueBody)}&` +
-        `labels=word-submission`;
-    
     // Open the pre-filled issue creation page directly
-    window.open(issueUrl, '_blank', 'noopener');
-    
+    openWordSubmission(word);
+
     // Clear the word input
     document.getElementById('word').value = '';
     
