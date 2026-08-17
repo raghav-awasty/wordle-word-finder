@@ -566,27 +566,6 @@ function onResultsClick(event) {
     }
 }
 
-// The streak is the reason the daily ritual sticks, but it only lived on the
-// history page. Surface it where the day actually starts. Failure is silent --
-// the finder must work whether or not the history loads.
-async function showStreakBadge() {
-    const badge = document.getElementById('navStreak');
-    if (!badge) return;
-
-    try {
-        const history = await WordHistory.load('data/word_otd.json');
-        const streak = WordHistory.currentStreak(history);
-        if (streak <= 0) return;
-
-        badge.innerHTML =
-            `🔥 <span class="streak-count">${streak}</span> day${streak === 1 ? '' : 's'}`;
-        badge.title = `Current Word of the Day streak: ${streak} day${streak === 1 ? '' : 's'}`;
-        badge.hidden = false;
-    } catch (error) {
-        console.error('Could not load word history for the streak badge:', error);
-    }
-}
-
 function onResultsKeyDown(event) {
     if (event.key !== 'Enter' && event.key !== ' ') return;
     const chip = event.target.closest('.word');
@@ -785,7 +764,7 @@ function initializeIndexPage() {
     focusKeyboardProxy();
 
     loadWords();
-    showStreakBadge();
+    loadStreakBadge('data/word_otd.json');
 }
 
 // Exported for the Node test harness; harmless in the browser.

@@ -53,6 +53,8 @@ async function loadHistoryForChecks() {
         return;
     }
 
+    renderStreakBadge(wotdHistory);
+
     const todayEntry = WordHistory.entryForToday(wotdHistory);
     if (todayEntry) {
         showStatus(

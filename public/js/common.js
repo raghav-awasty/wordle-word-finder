@@ -115,6 +115,35 @@ const WordHistory = {
     }
 };
 
+// Streak badge, shown beside the nav on every page so the buttons sit in the
+// same place throughout. Pages that already hold the history call
+// renderStreakBadge directly rather than fetching it twice.
+function renderStreakBadge(entries) {
+    const badge = document.getElementById('navStreak');
+    if (!badge) return;
+
+    const streak = WordHistory.currentStreak(entries);
+    if (streak <= 0) {
+        badge.hidden = true;
+        return;
+    }
+
+    const unit = streak === 1 ? 'day' : 'days';
+    badge.innerHTML = `🔥 <span class="streak-count">${streak}</span> ${unit}`;
+    badge.title = `Current Word of the Day streak: ${streak} ${unit}`;
+    badge.hidden = false;
+}
+
+// Failure is deliberately silent -- no page should break because the streak
+// could not be worked out.
+async function loadStreakBadge(url) {
+    try {
+        renderStreakBadge(await WordHistory.load(url));
+    } catch (error) {
+        console.error('Could not load word history for the streak badge:', error);
+    }
+}
+
 // Word submission
 //
 // Submitting opens a pre-filled GitHub issue rather than calling the API, so

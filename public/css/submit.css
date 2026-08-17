@@ -2,8 +2,11 @@
 
 body {
     line-height: 1.6;
-    max-width: 600px;
-    margin: 40px auto;
+}
+
+/* The bordered card used to be <body> itself, which pushed the nav down by its
+   margin, padding and border. It now wraps only the form. */
+.submit-card {
     padding: 2rem;
     border: 1px solid var(--border-gray);
     border-radius: var(--border-radius);

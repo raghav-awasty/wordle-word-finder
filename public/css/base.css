@@ -26,11 +26,16 @@
     box-sizing: border-box;
 }
 
+/* One page frame for every page. Each used to set its own padding, margin and
+   max-width, which put the nav at a different height on each -- so the buttons
+   jumped as you moved between pages. Only the content width varies now. */
 body {
     font-family: 'Inter', sans-serif;
     background-color: var(--bg-dark);
     color: var(--white);
     margin: auto;
+    max-width: 600px;
+    padding: 1rem;
     text-align: center;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -104,19 +109,45 @@ button:hover {
     margin-bottom: 2rem;
 }
 
+/* Sized explicitly rather than inheriting. The submit page sets a body
+   line-height of 1.6, which used to make its nav buttons taller than the same
+   buttons elsewhere. Fixing font-size, line-height and padding here keeps every
+   nav item identical whatever typography a page sets. */
+.nav-buttons a,
+.nav-streak {
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius-small);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+}
+
+/* Every page shows a different pair of labels ("Word History" vs "Word Finder"
+   vs "Submit Word"), so buttons sized to their text came out slightly different
+   widths and the whole centred row shifted as you moved between pages. A shared
+   min-width wider than the longest label makes every button the same size, so
+   the row is laid out identically everywhere. nowrap keeps a label from wrapping
+   inside its button and growing it past that width. */
 .nav-buttons a {
     background-color: var(--primary-green);
     color: var(--white);
-    padding: 0.5rem 1rem;
-    border-radius: var(--border-radius-small);
     text-decoration: none;
-    font-weight: 600;
-    font-size: 1rem;
+    min-width: 12rem;
+    text-align: center;
+    white-space: nowrap;
 }
 
 .nav-buttons a:hover {
     background-color: var(--primary-green-light);
     text-decoration: none;
+}
+
+/* Site mark, used in place of an emoji on the Word Finder link. */
+.nav-icon {
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.15em;
+    margin-right: 0.4rem;
 }
 
 /* Links */
@@ -129,17 +160,14 @@ a:hover {
     text-decoration: underline;
 }
 
-/* Streak badge, shown alongside the nav on the finder. */
+/* Streak badge, shown alongside the nav on every page. Box metrics come from
+   the shared rule above so its height matches the buttons exactly. */
 .nav-streak {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    padding: 0.5rem 0.85rem;
-    border-radius: var(--border-radius-small);
     background-color: var(--bg-secondary);
     color: var(--text-gray);
-    font-weight: 600;
-    font-size: 0.95rem;
     white-space: nowrap;
 }
 
@@ -155,14 +183,12 @@ a:hover {
 
 /* Responsive Base */
 @media (max-width: 768px) {
-    body {
-        padding: 1rem;
-    }
-    
     h1 {
         font-size: 1.8rem;
     }
-    
+
+    /* Only the spacing between nav items changes on narrow screens -- the items
+       themselves keep the same size, so nothing shifts between pages. */
     .nav-buttons {
         gap: 0.5rem;
     }
@@ -172,5 +198,18 @@ a:hover {
 @media (max-width: 480px) {
     h1 {
         font-size: 1.6rem;
+    }
+
+    /* Two 12rem buttons plus the gap overflow a narrow phone and drop onto
+       separate rows. Scaling the whole nav down keeps them side by side --
+       still identical to each other, just smaller than on desktop. */
+    .nav-buttons a,
+    .nav-streak {
+        font-size: 0.9rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .nav-buttons a {
+        min-width: 9.5rem;
     }
 }

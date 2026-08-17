@@ -6,24 +6,18 @@ let today = new Date();
 // Streak maths lives in common.js (WordHistory) so the finder's streak badge
 // and this page cannot drift apart.
 
-function updateStreakDisplay(currentStreak, longestStreak) {
-    const currentStreakEl = document.getElementById('current-streak');
+// The current streak lives in the nav badge on every page, so this panel only
+// carries the longest.
+function updateStreakDisplay(longestStreak) {
     const longestStreakEl = document.getElementById('longest-streak');
-    
-    if (currentStreakEl && longestStreakEl) {
-        // Add animation class and update numbers
-        currentStreakEl.classList.add('animate');
-        longestStreakEl.classList.add('animate');
-        
-        currentStreakEl.textContent = currentStreak;
-        longestStreakEl.textContent = longestStreak;
-        
-        // Remove animation class after animation completes
-        setTimeout(() => {
-            currentStreakEl.classList.remove('animate');
-            longestStreakEl.classList.remove('animate');
-        }, 600);
-    }
+    if (!longestStreakEl) return;
+
+    longestStreakEl.classList.add('animate');
+    longestStreakEl.textContent = longestStreak;
+
+    setTimeout(() => {
+        longestStreakEl.classList.remove('animate');
+    }, 600);
 }
 
 function Calendar(selector) {
@@ -312,19 +306,14 @@ async function loadHistory() {
     try {
         wordsData = await WordHistory.load('../data/word_otd.json');
 
-        // Calculate streaks
-        const currentStreak = WordHistory.currentStreak(wordsData);
-        const longestStreak = WordHistory.longestStreak(wordsData);
-        
-        // Update streak display
-        updateStreakDisplay(currentStreak, longestStreak);
+        updateStreakDisplay(WordHistory.longestStreak(wordsData));
+        renderStreakBadge(wordsData);
 
         // Initialize calendar
         new Calendar('#calendar');
     } catch (error) {
         console.error('Error loading word history:', error);
-        // Show 0 streaks on error
-        updateStreakDisplay(0, 0);
+        updateStreakDisplay(0);
     }
 }
 

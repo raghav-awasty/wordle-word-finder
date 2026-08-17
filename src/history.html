@@ -20,19 +20,15 @@
 </head>
 <body>
     <div class="nav-buttons">
-        <a href="../index.html">🔤 Word Finder</a>
+        <a href="../index.html"><img src="../public/favicon.svg" class="nav-icon" alt="">Word Finder</a>
         <a href="submit.html">📝 Submit Word</a>
+        <span id="navStreak" class="nav-streak" hidden></span>
     </div>
 
     <h1>Word of the Day History</h1>
     
-    <!-- Streak Statistics -->
+    <!-- Only the longest streak; the current one is already in the nav badge. -->
     <div class="streak-container">
-        <div class="streak-stat">
-            <div class="streak-number" id="current-streak">-</div>
-            <div class="streak-label">Current Streak</div>
-        </div>
-        <div class="streak-divider"></div>
         <div class="streak-stat">
             <div class="streak-number" id="longest-streak">-</div>
             <div class="streak-label">Longest Streak</div>

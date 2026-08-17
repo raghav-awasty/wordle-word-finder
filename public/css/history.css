@@ -1,7 +1,7 @@
 /* History Page Specific Styles */
 
+/* Only the width differs from the shared frame; the calendar needs room. */
 body {
-    padding: 2rem;
     max-width: 900px;
     overflow-x: hidden;
 }
@@ -41,12 +41,6 @@ body {
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-}
-
-.streak-divider {
-    width: 1px;
-    height: 60px;
-    background-color: var(--border-gray);
 }
 
 /* Animation for streak numbers */
@@ -411,10 +405,6 @@ body {
         padding: 1rem;
     }
     
-    .streak-divider {
-        width: 1px;
-        height: 60px;
-    }
     
     .streak-number {
         font-size: 2rem;
