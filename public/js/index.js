@@ -67,6 +67,19 @@ function parseCsvToWordsFrequencies(csvText) {
 // Constraint derivation
 // ---------------------------------------------------------------------------
 
+/** Every letter marked green or yellow somewhere on the board. */
+function lettersKnownPresent(rows) {
+    const present = new Set();
+    for (const row of rows) {
+        for (const tile of row) {
+            if (tile.letter && (tile.state === 'correct' || tile.state === 'present')) {
+                present.add(tile.letter);
+            }
+        }
+    }
+    return present;
+}
+
 /**
  * Turn the filled guess rows into a set of constraints.
  *
@@ -86,6 +99,10 @@ function deriveConstraints(rows) {
     const minCount = new Map();
     const exactCount = new Map();
     let hasAnyConstraint = false;
+
+    // Letters shown green or yellow in ANY row, gathered up front: a later row
+    // cannot then claim the same letter is absent.
+    const presentSomewhere = lettersKnownPresent(rows);
 
     for (const row of rows) {
         const filled = row
@@ -128,9 +145,15 @@ function deriveConstraints(rows) {
             }
         }
 
-        // A letter marked grey with no green/yellow twin is simply absent.
+        // A letter marked grey with no green/yellow twin is simply absent --
+        // unless another guess has already shown it green or yellow, in which
+        // case it demonstrably IS in the answer. Wordle would never return grey
+        // for a letter it holds unless that row used up the supply, so an
+        // isolated grey here is an uncoloured tile rather than a claim of
+        // absence. Reading it as "absent" would contradict the other row and
+        // empty the results.
         for (const letter of greyed) {
-            if (!known.has(letter)) {
+            if (!known.has(letter) && !presentSomewhere.has(letter)) {
                 exactCount.set(letter, 0);
             }
         }
@@ -266,6 +289,25 @@ function setTileState(row, col, newState) {
     }
 }
 
+/**
+ * Park the cursor where the next letter would go.
+ *
+ * Colouring a tile is something you do after a row is finished, so the next
+ * thing you want to type is the following guess -- not an overwrite of the tile
+ * you just coloured. Recolouring therefore returns the cursor to the first
+ * empty cell. When the board is full there is nowhere to go, so it stays put.
+ */
+function moveCursorToNextEmpty() {
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+            if (!guesses[row][col].letter) {
+                cursor = { row, col };
+                return;
+            }
+        }
+    }
+}
+
 function nextState(state, direction) {
     const offset = direction === 'back' ? STATES.length - 1 : 1;
     return STATES[(STATES.indexOf(state) + offset) % STATES.length];
@@ -280,8 +322,10 @@ function onGridClick(event) {
     const cell = guesses[row][col];
 
     if (cell.letter) {
-        // Filled tile: cycle its colour.
+        // Filled tile: cycle its colour, then put the cursor back where the
+        // next guess would be typed.
         setTileState(row, col, nextState(cell.state, 'forward'));
+        moveCursorToNextEmpty();
         update();
     } else {
         // Empty tile: move the typing cursor here.
@@ -309,18 +353,44 @@ function confirmedLetterAt(col, exceptRow) {
     return null;
 }
 
+/**
+ * Pick the colour a freshly typed letter should start on.
+ *
+ * Grey is only the right default for a letter nothing is known about. Once a
+ * letter has been shown green or yellow, the answer holds it, and Wordle cannot
+ * return grey for it again unless that guess exhausts the supply. So:
+ *
+ *   - confirmed green in this very column -> green
+ *   - known present anywhere else         -> yellow (at least yellow, maybe green)
+ *   - nothing known                       -> grey
+ *
+ * Beyond saving clicks, this avoids a contradiction: a grey letter with no
+ * coloured twin in its own row reads as "absent from the answer entirely",
+ * which fights the earlier green or yellow and empties the results list.
+ */
+function initialStateFor(letter, row, col) {
+    if (confirmedLetterAt(col, row) === letter) return 'correct';
+
+    if (!lettersKnownPresent(guesses).has(letter)) return 'absent';
+
+    // Only the first occurrence in this row can be assumed yellow. A second
+    // copy of the same letter tells us nothing on its own -- the answer may
+    // hold just one -- and colouring it too would claim the answer holds two.
+    // Grey is safe here precisely because the coloured twin in this row makes
+    // it read as "exactly one of these", not "absent".
+    const alreadyColouredInRow = guesses[row].some(
+        tile => tile.letter === letter && (tile.state === 'present' || tile.state === 'correct')
+    );
+
+    return alreadyColouredInRow ? 'absent' : 'present';
+}
+
 /** Place a letter at the cursor without re-rendering. */
 function placeLetter(letter) {
-    // If this column is already confirmed green with this same letter, colour
-    // it in rather than defaulting to grey. This is not just a keystroke saved:
-    // a grey letter with no green or yellow twin in its own row means "absent
-    // from the answer entirely", which would contradict the existing green and
-    // silently empty the results list.
-    const state = confirmedLetterAt(cursor.col, cursor.row) === letter
-        ? 'correct'
-        : 'absent';
-
-    guesses[cursor.row][cursor.col] = { letter, state };
+    guesses[cursor.row][cursor.col] = {
+        letter,
+        state: initialStateFor(letter, cursor.row, cursor.col)
+    };
     advanceCursor();
 }
 
@@ -364,6 +434,7 @@ function cycleCurrentTile(direction) {
     const cell = guesses[cursor.row][cursor.col];
     if (!cell.letter) return;
     setTileState(cursor.row, cursor.col, nextState(cell.state, direction));
+    moveCursorToNextEmpty();
     update();
 }
 
@@ -536,6 +607,9 @@ function renderSelection() {
         action.textContent = isSubmitted
             ? `${selectedWord.toUpperCase()} sent \u2014 create the issue in the new tab`
             : `Submit ${selectedWord.toUpperCase()} as today's word`;
+        // Already sent: the button is a status line now, not an action. Leaving
+        // it live meant a second tap silently opened another identical tab.
+        action.disabled = isSubmitted;
         bar.classList.toggle('submitted', isSubmitted);
         bar.hidden = false;
         document.body.classList.add('bar-visible');
@@ -745,7 +819,7 @@ function initializeIndexPage() {
     const submitSelected = document.getElementById('submitSelected');
     if (submitSelected) {
         submitSelected.addEventListener('click', () => {
-            if (!selectedWord) return;
+            if (!selectedWord || submittedWord === selectedWord) return;
             const word = selectedWord;
             openWordSubmission(word);
             // The issue opens in a new tab, so without this the bar looks
